@@ -1,0 +1,32 @@
+---
+# Variables applied to ALL hosts (the group named 'all'). Keeping settings
+# here — rather than hardcoded in tasks — is the Ansible way: the role stays
+# generic, and you tune behaviour by editing these values.
+
+# --- Identity ---
+server_hostname: homelab
+
+# --- SSH access ---
+# The username the SSH key is deployed for (should match ansible_user).
+ssh_user: CHANGEME
+# Path on YOUR machine (the control node) to the PUBLIC key to install on
+# the server. Generate one with: ssh-keygen -t ed25519 -C "homelab"
+ssh_public_key_file: ~/.ssh/id_ed25519.pub
+
+# --- SSH hardening (applied only AFTER the key is confirmed working) ---
+ssh_permit_root_login: "no"
+ssh_password_authentication: "no"
+
+# --- Base packages to install on the server ---
+base_packages:
+  - git
+  - curl
+  - vim
+  - htop
+  - tmux
+  - dnf-automatic   # provides the automatic-updates timer we enable later
+
+# --- Automatic updates ---
+# "default" downloads + applies security updates. Set to "install" to apply
+# ALL updates automatically, or "download" to only stage them.
+dnf_automatic_upgrade_type: security

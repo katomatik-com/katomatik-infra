@@ -1,0 +1,42 @@
+# === Secrets safety net (SOPS + age) ===
+# The age private key is the crown jewel — must NEVER be committed.
+age.key
+*.agekey
+key.txt
+keys.txt
+
+# Block plaintext secret files. Once SOPS is set up, encrypted secrets are
+# committed under an explicit name (e.g. *.sops.yaml / *.enc.yaml) which is
+# re-allowed below. Anything matching these patterns is assumed PLAINTEXT.
+*secret*.yaml
+*secret*.yml
+*secrets*.yaml
+*secrets*.yml
+*.dec.yaml
+*.dec.yml
+
+# Re-allow SOPS-encrypted files (safe to commit — values are ciphertext).
+!*.sops.yaml
+!*.sops.yml
+!*.enc.yaml
+!*.enc.yml
+
+# === Ansible ===
+*.retry
+# Vault password files, if ever used
+.vault_pass
+vault_pass.txt
+
+# === Kubernetes / Helm ===
+# Rendered manifests and downloaded chart archives
+charts/
+*.tgz
+kubeconfig
+*.kubeconfig
+
+# === Editor / OS cruft ===
+.DS_Store
+*.swp
+*~
+.idea/
+.vscode/

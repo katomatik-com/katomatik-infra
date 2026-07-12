@@ -1,0 +1,14 @@
+---
+# Handlers are tasks that run only when 'notified' by another task, and only
+# ONCE at the end of the play — no matter how many tasks notified them. This
+# is why we edit two sshd_config lines but restart sshd a single time.
+
+- name: restart sshd
+  ansible.builtin.systemd:
+    name: sshd
+    state: restarted
+
+- name: restart logind
+  ansible.builtin.systemd:
+    name: systemd-logind
+    state: restarted

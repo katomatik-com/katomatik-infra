@@ -1,0 +1,113 @@
+---
+# base role — OS-level setup and hardening for the homelab server.
+#
+# ORDERING MATTERS. Tasks run top-to-bottom. The SSH key is deployed BEFORE
+# password authentication is disabled, so by the time logins are key-only the
+# key is already in place. Your current session also stays connected across
+# the sshd restart. Still: on the very FIRST run, connect with a password
+# (--ask-pass) and DON'T flip ssh_password_authentication to "no" until you've
+# confirmed key login works. See README / CLAUDE.md.
+
+# --- 1. System update (the note in CLAUDE.md: do this first) ---
+- name: Upgrade all packages
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+
+# --- 2. Base packages ---
+- name: Install base packages
+  ansible.builtin.dnf:
+    name: "{{ base_packages }}"
+    state: present
+
+# --- 3. Hostname ---
+- name: Set the system hostname
+  ansible.builtin.hostname:
+    name: "{{ server_hostname }}"
+
+# --- 4. Deploy the SSH public key (BEFORE any SSH hardening) ---
+- name: Ensure .ssh dir + install authorized public key
+  ansible.posix.authorized_key:
+    user: "{{ ssh_user }}"
+    state: present
+    key: "{{ lookup('file', ssh_public_key_file) }}"
+
+# --- 5. SSH hardening ---
+# Edit sshd_config in place. Each task notifies the 'restart sshd' handler,
+# which runs ONCE at the end of the play (not after every line).
+- name: Disable SSH root login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*PermitRootLogin'
+    line: "PermitRootLogin {{ ssh_permit_root_login }}"
+    validate: /usr/sbin/sshd -t -f %s   # refuse to save a broken config
+  notify: restart sshd
+
+- name: Disable SSH password authentication (key-only login)
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*PasswordAuthentication'
+    line: "PasswordAuthentication {{ ssh_password_authentication }}"
+    validate: /usr/sbin/sshd -t -f %s
+  notify: restart sshd
+
+# --- 6. Prevent sleep/suspend (CRITICAL for a headless laptop server) ---
+# Two independent things can put a laptop to sleep:
+#   (a) the systemd sleep targets, and
+#   (b) the lid switch (this is a MacBook — the lid will be shut).
+- name: Mask systemd sleep/suspend/hibernate targets
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    masked: true
+  loop:
+    - sleep.target
+    - suspend.target
+    - hibernate.target
+    - hybrid-sleep.target
+
+- name: Ignore the lid switch so a closed lid doesn't suspend the server
+  ansible.builtin.copy:
+    dest: /etc/systemd/logind.conf.d/99-homelab-nosleep.conf
+    content: |
+      # Managed by Ansible (base role). Headless laptop server: never sleep.
+      [Login]
+      HandleLidSwitch=ignore
+      HandleLidSwitchExternalPower=ignore
+      HandleLidSwitchDocked=ignore
+    mode: "0644"
+  notify: restart logind
+
+# --- 7. Firewall basics (firewalld) ---
+- name: Ensure firewalld is installed
+  ansible.builtin.dnf:
+    name: firewalld
+    state: present
+
+- name: Ensure firewalld is running and enabled at boot
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: Allow SSH through the firewall
+  ansible.posix.firewalld:
+    service: ssh
+    permanent: true
+    immediate: true
+    state: enabled
+
+# --- 8. Automatic updates ---
+# dnf-automatic (installed in step 2) ships a systemd timer. We point it at
+# the upgrade type from group_vars, then enable the timer.
+- name: Configure dnf-automatic upgrade type
+  ansible.builtin.lineinfile:
+    path: /etc/dnf/automatic.conf
+    regexp: '^upgrade_type'
+    line: "upgrade_type = {{ dnf_automatic_upgrade_type }}"
+
+- name: Enable and start the dnf-automatic timer
+  ansible.builtin.systemd:
+    name: dnf-automatic.timer
+    state: started
+    enabled: true

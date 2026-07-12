@@ -1,0 +1,13 @@
+---
+# site.yml — the top-level playbook. This is what you run:
+#   ansible-playbook site.yml
+# It maps hosts to the roles that should be applied to them. Keeping this
+# file thin (just wiring) and putting the real work in roles is standard
+# Ansible structure — as the lab grows you add more roles here, not more
+# inline tasks.
+
+- name: Base OS setup and hardening
+  hosts: homelab
+  become: true          # run tasks with sudo (see ansible.cfg rationale)
+  roles:
+    - base

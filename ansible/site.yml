@@ -11,3 +11,9 @@
   become: true          # run tasks with sudo (see ansible.cfg rationale)
   roles:
     - base
+
+- name: k3s single-node cluster
+  hosts: homelab
+  become: true
+  roles:
+    - k3s

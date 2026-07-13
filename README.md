@@ -55,6 +55,43 @@ ssh homelab@<ip> 'systemctl is-enabled dnf-automatic.timer; \
   systemctl status sleep.target | head -3'   # should show: masked
 ```
 
+## Next phase: k3s cluster
+
+Installs single-node k3s on the server via the `k3s` role (see
+[ADR-0001](./docs/adr/0001-k3s-single-node-custom-ansible-role.md)). Ansible
+stops at the cluster boundary — it installs k3s, manages the service, opens the
+firewall, and fetches the kubeconfig back to your Mac.
+
+### One-time setup on the control node (your Mac)
+
+The fetched kubeconfig points at the cluster by name (`homelab.lan`), not by IP,
+so it survives DHCP changes. Map that name to the server's current IP in your
+Mac's `/etc/hosts` (Ansible can't edit your Mac's hosts file for you):
+
+```sh
+# Use the server's current IP (check with `ip addr` on the server).
+sudo sh -c 'echo "192.168.2.42  homelab homelab.lan" >> /etc/hosts'
+```
+
+> If the server's IP changes, update this one line — the kubeconfig keeps
+> working. `homelab.lan` (not `.local`) avoids macOS mDNS/Bonjour interception.
+
+### Run it
+
+```sh
+cd ansible
+ansible-playbook site.yml            # runs base (idempotent), then the k3s play
+```
+
+### Verify afterwards
+
+```sh
+export KUBECONFIG=~/.kube/homelab.config
+kubectl get nodes                    # 'homelab' should be Ready
+kubectl get pods -A                  # traefik, coredns, metrics-server,
+                                     # local-path-provisioner, svclb-traefik
+```
+
 ## Secrets
 
 This repo uses **SOPS + age** (see CLAUDE.md). Never commit plaintext

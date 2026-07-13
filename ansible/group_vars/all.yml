@@ -36,3 +36,39 @@ dnf_automatic_upgrade_type: security
 # apply_updates controls whether they're actually installed ("yes") or just
 # downloaded and left staged ("no"). "yes" = hands-off auto-patching.
 dnf_automatic_apply_updates: "yes"
+
+# --- k3s cluster (see docs/adr/0001) ---
+# Pinned k3s version — bump it DELIBERATELY, never float. Find the current
+# stable at https://update.k3s.io/v1-release/channels
+k3s_version: v1.36.2+k3s1
+
+# API server port, and the LAN subnet allowed to reach it. We open 6443 only
+# to the LAN (a firewalld rich rule), never to the internet — external access
+# is via Cloudflare Tunnel, which never touches this port. (see docs/adr/0002)
+k3s_api_port: 6443
+lan_cidr: 192.168.2.0/24
+
+# k3s/flannel default internal networks. Traffic *from* these is marked trusted
+# in firewalld so pod-to-pod and pod-to-service (incl. CoreDNS) isn't silently
+# dropped — the classic k3s + firewalld breakage.
+k3s_pod_cidr: 10.42.0.0/16
+k3s_service_cidr: 10.43.0.0/16
+
+# Names/IPs baked into the API server's TLS certificate (tls-san). Must include
+# every address you might put in the kubeconfig 'server:' field, or kubectl
+# fails with a cert error. Current DHCP IP, future static IP, and hostnames.
+k3s_tls_sans:
+  - 192.168.2.42     # current DHCP IP
+  - 192.168.2.10     # future static reservation
+  - homelab
+  - homelab.lan
+
+# kubeconfig handling on the control node (your Mac):
+#  - server address written into the fetched kubeconfig. A NAME, not an IP, so
+#    a DHCP change means editing /etc/hosts, not this file. Add to your Mac's
+#    /etc/hosts:  192.168.2.42  homelab homelab.lan
+#  - a lab-specific kubeconfig path, kept separate from ~/.kube/config so this
+#    role never touches your other clusters. Select it with:
+#      export KUBECONFIG=~/.kube/homelab.config
+k3s_kubeconfig_server: homelab.lan
+k3s_kubeconfig_local: ~/.kube/homelab.config

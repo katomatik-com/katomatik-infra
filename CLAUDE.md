@@ -99,7 +99,10 @@ homelab/
 - [x] Asahi install                ← COMPLETE (see notes below)
 - [x] Ansible playbook             ← COMPLETE (base role: hardening, no-sleep,
                                       firewall, chrony, dnf5-automatic)
-- [ ] k3s + Helm + Helmfile        ← CURRENT
+- [x] k3s                          ← COMPLETE (single-node v1.36.2+k3s1 via
+                                      the k3s role; bundled Traefik kept)
+- [ ] Helm                         ← CURRENT
+- [ ] Helmfile
 - [ ] ArgoCD bootstrap
 - [ ] Cloudflare Tunnel
 - [ ] Prometheus + Grafana

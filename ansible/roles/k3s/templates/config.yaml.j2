@@ -1,0 +1,21 @@
+# Managed by Ansible (k3s role). Edit the role/vars, not this file.
+#
+# k3s reads this at startup from /etc/rancher/k3s/config.yaml. Each key here is
+# the YAML form of a `k3s server` flag — so this file IS our cluster config,
+# version-controlled and declarative instead of buried in a systemd unit.
+
+# Make the generated kubeconfig group/world-readable so Ansible can fetch it
+# back to the Mac without root. Learning simplification (mild secret exposure
+# on a shared host) — see docs/adr/0001.
+write-kubeconfig-mode: "0644"
+
+# Extra Subject Alternative Names for the API server certificate. Without the
+# address you connect over listed here, kubectl rejects the TLS handshake.
+tls-san:
+{% for san in k3s_tls_sans %}
+  - {{ san }}
+{% endfor %}
+
+# NOTE: we deliberately do NOT set `disable: traefik`. Keeping k3s's bundled
+# Traefik (Ingress model) is an intentional choice for now — see docs/adr/0001.
+# Disabling it here is how we'd later switch to a Helm-managed Traefik.

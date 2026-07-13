@@ -1,0 +1,113 @@
+---
+# k3s role — install and manage a single-node k3s cluster on the homelab host.
+# Rationale: docs/adr/0001-k3s-single-node-custom-ansible-role.md
+#
+# BOUNDARY (important): this role stops at the cluster edge. It installs the
+# k3s binary, manages the systemd service, opens the host firewall for cluster
+# networking, and fetches the kubeconfig back to the Mac. Anything running
+# INSIDE Kubernetes is Helm/ArgoCD's job — never Ansible's. No `kubectl apply`
+# from here; that would create two competing sources of truth.
+#
+# ORDERING MATTERS. The config file and firewall rules are put in place BEFORE
+# k3s first starts, so the flags apply from boot and flannel's networking isn't
+# dropped the moment the cluster comes up.
+
+# --- 1. Config file (must exist BEFORE first start) ---
+- name: Ensure the k3s config directory exists
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: "0755"
+
+- name: Write the k3s server config
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/rancher/k3s/config.yaml
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart k3s      # picks up config changes on re-runs
+
+# --- 2. Firewall for cluster networking (BEFORE k3s starts) ---
+# Two independent needs:
+#   (a) let kubectl reach the API server — but only from the LAN, never public;
+#   (b) let flannel's pod/service traffic flow — firewalld otherwise silently
+#       drops pod-to-pod and pod-to-DNS, the classic k3s + firewalld breakage.
+- name: Allow the Kubernetes API (6443/tcp) from the LAN only
+  ansible.posix.firewalld:
+    rich_rule: rule family="ipv4" source address="{{ lan_cidr }}" port port="{{ k3s_api_port }}" protocol="tcp" accept
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Trust the k3s pod and service CIDRs (intra-cluster traffic)
+  ansible.posix.firewalld:
+    source: "{{ item }}"
+    zone: trusted
+    permanent: true
+    immediate: true
+    state: enabled
+  loop:
+    - "{{ k3s_pod_cidr }}"
+    - "{{ k3s_service_cidr }}"
+
+# --- 3. Install k3s (pinned version, idempotent) ---
+# We guard the install on the reported version so re-runs are no-ops, and a
+# version bump in group_vars triggers a clean re-install/upgrade.
+- name: Check the currently installed k3s version (if any)
+  ansible.builtin.command: k3s --version
+  register: k3s_installed
+  changed_when: false
+  failed_when: false       # not installed yet -> non-zero rc, that's fine
+
+- name: Download the official k3s install script
+  ansible.builtin.get_url:
+    url: https://get.k3s.io
+    dest: /usr/local/bin/k3s-install.sh
+    mode: "0755"
+  when: k3s_version not in (k3s_installed.stdout | default(''))
+
+- name: Install k3s at the pinned version
+  ansible.builtin.command: /usr/local/bin/k3s-install.sh
+  environment:
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
+  when: k3s_version not in (k3s_installed.stdout | default(''))
+  # The script installs the k3s binary + kubectl/crictl/ctr symlinks, writes
+  # the k3s.service systemd unit, and starts it (reading our config.yaml).
+
+# --- 4. Service state ---
+- name: Ensure k3s is enabled at boot and running
+  ansible.builtin.systemd:
+    name: k3s
+    state: started
+    enabled: true
+
+# --- 5. Fetch the kubeconfig to the Mac, pointed at the cluster's name ---
+- name: Wait until k3s has written the kubeconfig
+  ansible.builtin.wait_for:
+    path: /etc/rancher/k3s/k3s.yaml
+    timeout: 120
+
+- name: Fetch the kubeconfig to the control node
+  ansible.builtin.fetch:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: "{{ k3s_kubeconfig_local }}"
+    flat: true             # write exactly to dest, no host/path subdirs
+
+# k3s writes 'server: https://127.0.0.1:6443' — correct on the server itself,
+# useless from the Mac. Rewrite it to the cluster name (resolved via /etc/hosts)
+# so kubectl works remotely and survives DHCP IP changes.
+- name: Point the local kubeconfig at the cluster hostname
+  delegate_to: localhost
+  become: false
+  ansible.builtin.replace:
+    path: "{{ k3s_kubeconfig_local }}"
+    regexp: 'https://127\.0\.0\.1:6443'
+    replace: "https://{{ k3s_kubeconfig_server }}:{{ k3s_api_port }}"
+
+- name: Restrict the local kubeconfig (it embeds admin credentials)
+  delegate_to: localhost
+  become: false
+  ansible.builtin.file:
+    path: "{{ k3s_kubeconfig_local }}"
+    mode: "0600"

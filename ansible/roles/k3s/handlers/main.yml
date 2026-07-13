@@ -1,0 +1,9 @@
+---
+# Notified by the config template. Restarts k3s once at the end of the play so
+# config changes (e.g. a new tls-san) take effect. On a fresh install the
+# service is already started by the install script; a restart here is harmless.
+
+- name: restart k3s
+  ansible.builtin.systemd:
+    name: k3s
+    state: restarted

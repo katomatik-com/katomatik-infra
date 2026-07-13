@@ -5,10 +5,13 @@
 
 # --- Identity ---
 server_hostname: homelab
+# IANA timezone name (see `timedatectl list-timezones`). Affects log
+# timestamps, cron, cert validity checks, etc.
+server_timezone: Europe/Amsterdam
 
 # --- SSH access ---
 # The username the SSH key is deployed for (should match ansible_user).
-ssh_user: CHANGEME
+ssh_user: katomatik
 # Path on YOUR machine (the control node) to the PUBLIC key to install on
 # the server. Generate one with: ssh-keygen -t ed25519 -C "homelab"
 ssh_public_key_file: ~/.ssh/id_ed25519.pub
@@ -27,6 +30,9 @@ base_packages:
   - dnf-automatic   # provides the automatic-updates timer we enable later
 
 # --- Automatic updates ---
-# "default" downloads + applies security updates. Set to "install" to apply
-# ALL updates automatically, or "download" to only stage them.
+# upgrade_type selects WHICH updates: "security" (only security errata) or
+# "default" (all available updates).
 dnf_automatic_upgrade_type: security
+# apply_updates controls whether they're actually installed ("yes") or just
+# downloaded and left staged ("no"). "yes" = hands-off auto-patching.
+dnf_automatic_apply_updates: "yes"

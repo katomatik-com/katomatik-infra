@@ -1,0 +1,9 @@
+---
+# Ansible collections this project depends on. Install them on the control
+# node with:
+#   ansible-galaxy collection install -r requirements.yml
+collections:
+  # authorized_key, firewalld
+  - name: ansible.posix
+  # timezone
+  - name: community.general

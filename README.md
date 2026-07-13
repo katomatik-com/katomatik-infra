@@ -7,12 +7,16 @@ See [CLAUDE.md](./CLAUDE.md) for the full plan, stack, and decisions.
 
 OS-level setup + hardening of the Fedora Asahi server from your Mac.
 
+> New to the setup? Start with the step-by-step
+> [Ansible bootstrap guide](./docs/ansible-bootstrap.md) — it takes two fresh
+> machines to "Ansible can manage my server" (users, SSH keys, first run).
+
 ### One-time setup on the control node (your Mac)
 
 ```sh
 # 1. Install Ansible + the collection the base role uses
 brew install ansible                       # or: pipx install ansible
-ansible-galaxy collection install ansible.posix
+ansible-galaxy collection install -r ansible/requirements.yml
 
 # 2. Generate an SSH key for the homelab (if you don't have one)
 ssh-keygen -t ed25519 -C "homelab"         # -> ~/.ssh/id_ed25519[.pub]

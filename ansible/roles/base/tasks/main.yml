@@ -26,14 +26,33 @@
   ansible.builtin.hostname:
     name: "{{ server_hostname }}"
 
-# --- 4. Deploy the SSH public key (BEFORE any SSH hardening) ---
+# --- 4. Time sync & timezone ---
+# Correct, synchronized time is a quiet dependency of almost everything:
+# TLS cert validity, k3s/etcd, log correlation, and token expiry all break
+# under clock drift. chrony is Fedora's default NTP client.
+- name: Set the system timezone
+  community.general.timezone:
+    name: "{{ server_timezone }}"
+
+- name: Ensure chrony is installed
+  ansible.builtin.dnf:
+    name: chrony
+    state: present
+
+- name: Ensure chrony (NTP) is running and enabled at boot
+  ansible.builtin.systemd:
+    name: chronyd
+    state: started
+    enabled: true
+
+# --- 5. Deploy the SSH public key (BEFORE any SSH hardening) ---
 - name: Ensure .ssh dir + install authorized public key
   ansible.posix.authorized_key:
     user: "{{ ssh_user }}"
     state: present
     key: "{{ lookup('file', ssh_public_key_file) }}"
 
-# --- 5. SSH hardening ---
+# --- 6. SSH hardening ---
 # Edit sshd_config in place. Each task notifies the 'restart sshd' handler,
 # which runs ONCE at the end of the play (not after every line).
 - name: Disable SSH root login
@@ -52,7 +71,7 @@
     validate: /usr/sbin/sshd -t -f %s
   notify: restart sshd
 
-# --- 6. Prevent sleep/suspend (CRITICAL for a headless laptop server) ---
+# --- 7. Prevent sleep/suspend (CRITICAL for a headless laptop server) ---
 # Two independent things can put a laptop to sleep:
 #   (a) the systemd sleep targets, and
 #   (b) the lid switch (this is a MacBook — the lid will be shut).
@@ -66,6 +85,12 @@
     - hibernate.target
     - hybrid-sleep.target
 
+- name: Ensure the logind drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/logind.conf.d
+    state: directory
+    mode: "0755"
+
 - name: Ignore the lid switch so a closed lid doesn't suspend the server
   ansible.builtin.copy:
     dest: /etc/systemd/logind.conf.d/99-homelab-nosleep.conf
@@ -78,7 +103,7 @@
     mode: "0644"
   notify: restart logind
 
-# --- 7. Firewall basics (firewalld) ---
+# --- 8. Firewall basics (firewalld) ---
 - name: Ensure firewalld is installed
   ansible.builtin.dnf:
     name: firewalld
@@ -97,17 +122,36 @@
     immediate: true
     state: enabled
 
-# --- 8. Automatic updates ---
-# dnf-automatic (installed in step 2) ships a systemd timer. We point it at
-# the upgrade type from group_vars, then enable the timer.
-- name: Configure dnf-automatic upgrade type
-  ansible.builtin.lineinfile:
-    path: /etc/dnf/automatic.conf
-    regexp: '^upgrade_type'
-    line: "upgrade_type = {{ dnf_automatic_upgrade_type }}"
+# --- 9. Automatic updates ---
+# Fedora uses dnf5, whose automatic plugin reads
+# /etc/dnf/dnf5-plugins/automatic.conf. The package ships that path as an rpm
+# "ghost" (owned but not written to disk), so we seed it from the shipped
+# default template, then set our values. The real timer unit is
+# dnf5-automatic.timer (dnf-automatic.timer is just an alias to it).
+- name: Seed the dnf5-automatic config from the shipped default
+  ansible.builtin.copy:
+    src: /usr/share/dnf5/dnf5-plugins/automatic.conf
+    dest: /etc/dnf/dnf5-plugins/automatic.conf
+    remote_src: true       # src is a file ON THE HOST, not the control node
+    force: false           # don't clobber it once it exists (idempotent seed)
+    owner: root
+    group: root
+    mode: "0644"
 
-- name: Enable and start the dnf-automatic timer
+- name: Set dnf5-automatic to apply security updates automatically
+  community.general.ini_file:
+    path: /etc/dnf/dnf5-plugins/automatic.conf
+    section: commands
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+    no_extra_spaces: true
+    mode: "0644"
+  loop:
+    - { option: upgrade_type, value: "{{ dnf_automatic_upgrade_type }}" }
+    - { option: apply_updates, value: "{{ dnf_automatic_apply_updates }}" }
+
+- name: Enable and start the dnf5-automatic timer
   ansible.builtin.systemd:
-    name: dnf-automatic.timer
+    name: dnf5-automatic.timer
     state: started
     enabled: true

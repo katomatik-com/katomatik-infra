@@ -54,9 +54,10 @@ homelab/
     secret (Cloudflare Tunnel token or Keycloak/Postgres) — not before.
 
 ## Current phase
-- [ ] Asahi install                ← COMPLETE (see notes below)
-- [ ] Ansible playbook             ← CURRENT
-- [ ] k3s + Helm + Helmfile
+- [x] Asahi install                ← COMPLETE (see notes below)
+- [x] Ansible playbook             ← COMPLETE (base role: hardening, no-sleep,
+                                      firewall, chrony, dnf5-automatic)
+- [ ] k3s + Helm + Helmfile        ← CURRENT
 - [ ] ArgoCD bootstrap
 - [ ] Cloudflare Tunnel
 - [ ] Prometheus + Grafana

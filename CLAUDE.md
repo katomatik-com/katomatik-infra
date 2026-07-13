@@ -34,7 +34,26 @@ homelab/
 │   └── site.yml
 ├── k3s/
 ├── helm/
+├── docs/
+│   └── adr/          # Architectural Decision Records (see below)
 └── README.md
+
+## Architectural Decision Records (ADRs)
+- Significant architectural decisions are recorded as ADRs under
+  `docs/adr/`, one decision per file, so the *reasoning* and trade-offs
+  survive — not just the resulting config.
+- Each ADR has: **Title** (sequential id + name), **Status** (Proposed /
+  Accepted / Rejected / Superseded), **Context**, **Decision** (active
+  voice), **Consequences**. Keep to 1–2 pages. Files are named
+  `NNNN-short-title.md`; `docs/adr/README.md` is the index and template.
+- When a decision changes, add a NEW ADR that supersedes the old one and
+  flip the old one's status — don't rewrite history.
+- After making a substantive architectural decision in a session, write it
+  up as an ADR and add it to the index table in `docs/adr/README.md`.
+- Recorded so far:
+  - ADR-0001 — single-node k3s via a custom Ansible role (incl. keeping
+    bundled Traefik/Ingress for now).
+  - ADR-0002 — Cloudflare Tunnel as a host daemon pointed at Traefik ingress.
 
 ## Secrets management — decided: SOPS + age
 - Approach: encrypt secret *values* in YAML with an age keypair, commit
@@ -68,9 +87,13 @@ homelab/
 - Before writing the role, walk through what the k3s install actually does
   (install script, systemd unit, kubeconfig location, the flags that matter)
   so it isn't a black box.
-- Open decision for the start of this phase: keep k3s's bundled Traefik
-  (simplest) or disable it and install Traefik ourselves via Helm (more
-  control, more to learn). Traefik is a first-class component in the stack.
+- RESOLVED (see ADR-0001): keep k3s's bundled Traefik (Ingress model) for
+  now. Planned later exercises — migrate to a Helm-managed Traefik, then
+  from the Ingress API to the Gateway API — each with its own ADR when done.
+- Cloudflare Tunnel topology is also settled ahead of time (see ADR-0002):
+  host `cloudflared` daemon → Traefik ingress, routing kept in Git. This
+  revises the "cloudflared as a systemd service" note above only in that we
+  point it at Traefik rather than at Services directly.
 
 ## Current phase
 - [x] Asahi install                ← COMPLETE (see notes below)

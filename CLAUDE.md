@@ -53,6 +53,25 @@ homelab/
   - Install SOPS+age tooling just before the first component that needs a
     secret (Cloudflare Tunnel token or Keycloak/Postgres) — not before.
 
+## k3s phase — decided approach
+- Install k3s with Ansible, written as our OWN small `k3s` role (not the
+  community k3s-ansible role) — same "understand it, then codify it" method
+  used for the base role. A single-node install is simple enough that a
+  community role would be overkill, and hand-rolling teaches more.
+- Ansible's job STOPS at the cluster boundary. Ansible: install k3s, manage
+  the systemd service, fetch the kubeconfig back to the Mac. Everything
+  running *inside* Kubernetes (Traefik config, ArgoCD, Prometheus, Keycloak,
+  apps) is Helm/Helmfile + ArgoCD — NOT Ansible. Don't `kubectl apply` from
+  Ansible; that creates two competing sources of truth.
+- GitOps discipline: keep everything declarative and committed so ArgoCD can
+  adopt it later.
+- Before writing the role, walk through what the k3s install actually does
+  (install script, systemd unit, kubeconfig location, the flags that matter)
+  so it isn't a black box.
+- Open decision for the start of this phase: keep k3s's bundled Traefik
+  (simplest) or disable it and install Traefik ourselves via Helm (more
+  control, more to learn). Traefik is a first-class component in the stack.
+
 ## Current phase
 - [x] Asahi install                ← COMPLETE (see notes below)
 - [x] Ansible playbook             ← COMPLETE (base role: hardening, no-sleep,

@@ -16,8 +16,9 @@ running.
 - OS: Fedora Asahi Remix (headless, server variant)
 - Config management: Ansible (OS-level setup)
 - Kubernetes: k3s (single node)
-- Package deployment: Helm + Helmfile
-- GitOps: ArgoCD (watches Git repo, manages cluster state)
+- Package deployment: Helm (chart format; rendered by ArgoCD, not run by hand)
+- GitOps: ArgoCD only, via app-of-apps (watches Git, manages cluster state,
+  self-manages after a one-time bootstrap). Helmfile dropped — see ADR-0003.
 - Secrets: SOPS + age (encrypted in Git, decrypted by ArgoCD plugin)
 - Ingress: Traefik (bundled with k3s)
 - Tunnel: Cloudflare Tunnel (cloudflared as systemd service)
@@ -104,8 +105,10 @@ homelab/
                                       the k3s role; bundled Traefik kept)
 - [x] Helm                         ← COMPLETE (v4; hands-on walkthrough in
                                       docs/helm-basics.md)
-- [ ] Helmfile                     ← CURRENT
-- [ ] ArgoCD bootstrap
+- [~] Helmfile                     ← DROPPED from critical path (ADR-0003);
+                                      optional side-exercise only
+- [ ] ArgoCD bootstrap             ← CURRENT (ArgoCD-only, app-of-apps; the
+                                      one-time bootstrap is in ADR-0003)
 - [ ] Cloudflare Tunnel
 - [ ] Prometheus + Grafana
 - [ ] Keycloak + Postgres

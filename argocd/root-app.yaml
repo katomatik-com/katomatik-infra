@@ -17,7 +17,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/kurtcebe/homelab.git
+    # SSH URL: private repo, read-only deploy key credential (ADR-0004).
+    repoURL: git@github.com:kurtcebe/homelab.git
     targetRevision: main
     path: apps                 # every Application manifest in apps/ becomes a child
   destination:

@@ -31,3 +31,4 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0001](0001-k3s-single-node-custom-ansible-role.md) | Provision single-node k3s via a custom Ansible role | Accepted |
 | [0002](0002-cloudflare-tunnel-host-daemon-to-traefik.md) | Expose services via a host-daemon Cloudflare Tunnel pointed at Traefik | Accepted |
 | [0003](0003-argocd-only-gitops-helmfile-dropped.md) | GitOps reconciler — ArgoCD only (app-of-apps), Helmfile dropped | Accepted |
+| [0004](0004-argocd-repo-access-deploy-key.md) | ArgoCD reads the private repo via a read-only SSH deploy key | Accepted |

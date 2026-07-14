@@ -1,0 +1,5 @@
+# Which files SOPS encrypts, and to which age recipient(s).
+# The value below is a PUBLIC key — safe to commit.
+creation_rules:
+  - path_regex: .*\.sops\.ya?ml$
+    age: age1mj9llmgzyevm6glaj8pdcc907t2kqnz4vl9juwtk3y5x59yeucvsvrrzxs

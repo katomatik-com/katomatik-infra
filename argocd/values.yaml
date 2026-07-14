@@ -1,0 +1,18 @@
+# ArgoCD Helm chart values — bootstrap config for the homelab (single node).
+#
+# Chart: argo/argo-cd, pinned to 10.1.3 (see apps/argocd.yaml and the bootstrap
+# command in docs/adr/0003). This same file is used TWICE, so it's the single
+# source of truth for ArgoCD's own config:
+#   1. the one-time bootstrap:  helm install ... -f argocd/values.yaml
+#   2. ArgoCD self-managing itself afterwards (apps/argocd.yaml references it)
+#
+# Kept intentionally minimal — add config here as needs arise, committed to Git.
+
+configs:
+  params:
+    # Run argocd-server WITHOUT its own TLS. We terminate TLS upstream (Traefik
+    # / Cloudflare Tunnel — ADR-0002), so a second TLS layer here is redundant,
+    # and it makes `kubectl port-forward` access over plain http painless during
+    # bootstrap. Do NOT use this if argocd-server is ever exposed raw to a
+    # network without an upstream terminating TLS.
+    server.insecure: true

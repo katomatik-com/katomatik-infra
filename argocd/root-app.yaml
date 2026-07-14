@@ -1,0 +1,29 @@
+# Application: the app-of-apps ROOT.
+#
+# This is the single object you apply by hand ONCE, right after bootstrapping
+# ArgoCD (see docs/adr/0003). Its `source` is the apps/ directory of this repo,
+# which contains one Application manifest per component (currently just
+# apps/argocd.yaml). Syncing the root creates those child Applications, and from
+# then on the whole cluster's desired state hangs off this one committed object.
+#
+# Kept in argocd/ (not apps/) on purpose: it's the bootstrap entrypoint, applied
+# manually, rather than something the root manages.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kurtcebe/homelab.git
+    targetRevision: main
+    path: apps                 # every Application manifest in apps/ becomes a child
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    # Manual for now — apply the root, then watch the diff and Sync deliberately.
+    syncOptions:
+      - CreateNamespace=true

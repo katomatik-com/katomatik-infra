@@ -1,0 +1,39 @@
+# Application: ArgoCD manages itself.
+#
+# This is what makes ArgoCD upgrades GitOps: after bootstrap, changing the
+# pinned chart version or values/argocd/values.yaml and syncing this Application
+# rolls ArgoCD forward — no more manual `helm install`.
+#
+# It's a MULTI-SOURCE Application (an ArgoCD feature): the chart comes from the
+# Argo Helm repo, but the value file comes from OUR git repo. The `$values` ref
+# below is how the second source is pulled into the first source's valueFiles,
+# so we reuse the exact same argocd/values.yaml the bootstrap used (DRY, single
+# source of truth for ArgoCD's config).
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd            # ArgoCD watches this namespace for Applications
+spec:
+  project: default             # the built-in project; scope it down later
+  sources:
+    # Source 1 — the ArgoCD chart from the Argo Helm repo (pinned).
+    - repoURL: https://argoproj.github.io/argo-helm
+      chart: argo-cd
+      targetRevision: 10.1.3
+      helm:
+        valueFiles:
+          - $values/argocd/values.yaml   # resolved from source 2 via the ref
+    # Source 2 — our repo, providing the value file (reference only, no path).
+    - repoURL: https://github.com/kurtcebe/homelab.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc   # this cluster
+    namespace: argocd
+  syncPolicy:
+    # No `automated:` block => MANUAL sync (we click/CLI "Sync" ourselves).
+    # We'll switch to automated + selfHeal + prune once the loop is understood.
+    syncOptions:
+      - CreateNamespace=true

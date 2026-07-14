@@ -58,7 +58,8 @@ helm repo update
 helm search repo argo/argo-cd --versions | head    # pick + pin a version
 
 # 2. Install ArgoCD once. This is the single imperative step.
-helm install argo-cd argo/argo-cd \
+#    The release name MUST be 'argocd' — see the warning below.
+helm install argocd argo/argo-cd \
   --namespace argocd --create-namespace \
   --version <pinned-version> \
   -f argocd/values.yaml                             # committed values file
@@ -68,12 +69,27 @@ kubectl -n argocd get secret argocd-initial-admin-secret \
   -o jsonpath='{.data.password}' | base64 -d; echo
 ```
 
+> **CRITICAL — the Helm release name must equal the Application name (`argocd`).**
+> When the self-managing `Application` (named `argocd`) renders the chart, it
+> uses release name `argocd`, producing resource names like `argocd-server`. For
+> ArgoCD to *adopt* the bootstrap install rather than stand up a second parallel
+> one, the bootstrap `helm install` must use the **same** release name. Using a
+> different name (e.g. `argo-cd`) yields `argo-cd-argocd-*` resources that never
+> match, so you end up with **two full ArgoCD installs** (two controllers,
+> doubled CPU). If that happens, `helm uninstall <wrong-release>` — but note it
+> also deletes the shared fixed-name configs (`argocd-cm`, `argocd-rbac-cm`,
+> `argocd-secret`); recover by re-applying the chart render
+> (`helm template argocd … | kubectl apply -f -`) and restarting the argocd
+> pods. Getting the release name right the first time avoids all of this.
+
 Then **commit the app-of-apps root `Application`**, which includes an
-`Application` that manages `argo-cd` from the same chart + values in Git. After
-the first sync, ArgoCD owns its own lifecycle and step 2 is never repeated.
+`Application` that manages `argocd` from the same chart + values in Git (via the
+matching release name). After the first sync, ArgoCD owns its own lifecycle and
+step 2 is never repeated.
 
 Version pinning: don't hardcode a version in this ADR — find and pin the current
-chart at bootstrap time via `helm search repo argo/argo-cd --versions`.
+chart at bootstrap time via `helm search repo argo/argo-cd --versions`. (This
+lab pinned `10.1.3` / ArgoCD `v3.4.5`.)
 
 ## Consequences
 

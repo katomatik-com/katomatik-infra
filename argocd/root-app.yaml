@@ -25,6 +25,10 @@ spec:
     server: https://kubernetes.default.svc
     namespace: argocd
   syncPolicy:
-    # Manual for now — apply the root, then watch the diff and Sync deliberately.
+    # Automated: the root reconciles the set of child Applications in apps/
+    # continuously — add a manifest to apps/, push, and ArgoCD creates it.
+    automated:
+      selfHeal: true
+      prune: true
     syncOptions:
       - CreateNamespace=true

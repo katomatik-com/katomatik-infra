@@ -44,21 +44,62 @@ ArgoCD authenticates to the private repo with a **read-only SSH deploy key**.
 - The **private** key is applied **by hand** as an ArgoCD repository Secret in
   the `argocd` namespace — the out-of-band bootstrap secret. It is **never
   committed**, and does not use SOPS (SOPS is for values *in* Git; this
-  credential cannot be, by definition):
-
-  ```sh
-  kubectl -n argocd create secret generic repo-homelab \
-    --from-literal=type=git \
-    --from-literal=url=git@github.com:kurtcebe/homelab.git \
-    --from-file=sshPrivateKey="$HOME/.ssh/homelab_argocd_deploy"
-  kubectl -n argocd label secret repo-homelab \
-    argocd.argoproj.io/secret-type=repository
-  ```
-
+  credential cannot be, by definition). See **Setup steps** below for the exact
+  commands.
 - All Application manifests reference the repo by its **SSH URL**
   (`git@github.com:kurtcebe/homelab.git`) so they match this credential. GitHub's
   host key is already in ArgoCD's shipped `argocd-ssh-known-hosts-cm`, so no
   known-hosts step is needed.
+
+## Setup steps (reproducible)
+
+All from the control node (the Mac); for the `kubectl` steps
+`export KUBECONFIG=~/.kube/homelab.config` first.
+
+1. **Generate the read-only deploy keypair** — ed25519, **no passphrase** so
+   ArgoCD can use it non-interactively:
+
+   ```sh
+   ssh-keygen -t ed25519 -C "argocd-homelab-deploy" \
+     -f ~/.ssh/homelab_argocd_deploy -N ""
+   ```
+
+2. **Register the PUBLIC key as a read-only GitHub deploy key** — omitting
+   `--allow-write` keeps it read-only:
+
+   ```sh
+   gh repo deploy-key add ~/.ssh/homelab_argocd_deploy.pub \
+     -R kurtcebe/homelab --title argocd-readonly
+   gh repo deploy-key list -R kurtcebe/homelab      # verify
+   ```
+
+3. **Apply the PRIVATE key as an ArgoCD repository Secret** — `--from-file`
+   keeps the key out of your shell history. The
+   `argocd.argoproj.io/secret-type=repository` label is what makes ArgoCD treat
+   the Secret as a credential; **without the label it is silently ignored** and
+   git falls back to a (nonexistent) SSH agent, failing with
+   `SSH agent requested but SSH_AUTH_SOCK not-specified`:
+
+   ```sh
+   kubectl -n argocd create secret generic repo-homelab \
+     --from-literal=type=git \
+     --from-literal=url=git@github.com:kurtcebe/homelab.git \
+     --from-file=sshPrivateKey="$HOME/.ssh/homelab_argocd_deploy"
+   kubectl -n argocd label secret repo-homelab \
+     argocd.argoproj.io/secret-type=repository
+   ```
+
+4. **Verify** the credential is registered and complete:
+
+   ```sh
+   kubectl -n argocd get secret repo-homelab -o json \
+     | jq '{labels: .metadata.labels, keys: (.data | keys)}'
+   # expect the repository label and ["sshPrivateKey","type","url"]
+   ```
+
+   In the UI, **Settings → Repositories** should list the SSH URL as
+   **Successful**. The Secret's `url` must match the Applications' `repoURL`
+   byte-for-byte, or no credential matches.
 
 ## Consequences
 

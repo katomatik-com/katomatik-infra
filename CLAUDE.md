@@ -107,9 +107,11 @@ homelab/
                                       docs/helm-basics.md)
 - [~] Helmfile                     ← DROPPED from critical path (ADR-0003);
                                       optional side-exercise only
-- [ ] ArgoCD bootstrap             ← CURRENT (ArgoCD-only, app-of-apps; the
-                                      one-time bootstrap is in ADR-0003)
-- [ ] Cloudflare Tunnel
+- [x] ArgoCD bootstrap             ← COMPLETE (v3.4.5 via chart 10.1.3,
+                                      app-of-apps, self-managed, automated sync;
+                                      private repo via deploy key, ADR-0004)
+- [ ] Cloudflare Tunnel            ← CURRENT (host daemon → Traefik, ADR-0002;
+                                      first SOPS-encrypted secret lands here)
 - [ ] Prometheus + Grafana
 - [ ] Keycloak + Postgres
 - [ ] Own apps

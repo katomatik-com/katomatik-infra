@@ -12,3 +12,11 @@
   ansible.builtin.systemd:
     name: systemd-logind
     state: restarted
+
+# Reload (not restart) so NetworkManager re-reads conf.d without bouncing the
+# live WiFi link that Ansible is connected over. The powersave default takes
+# effect on the next connection activation / reboot.
+- name: reload NetworkManager
+  ansible.builtin.systemd:
+    name: NetworkManager
+    state: reloaded

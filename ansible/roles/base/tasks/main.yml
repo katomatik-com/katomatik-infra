@@ -103,6 +103,28 @@
     mode: "0644"
   notify: restart logind
 
+# --- 7b. WiFi power management (headless server must not idle its radio) ---
+# WiFi power-save drops the radio on idle, which breaks long-lived connections
+# (kubectl port-forward, SSH) after a period of inactivity — you see 0% packet
+# loss while active but failures right after a pause. A headless server should
+# keep the radio awake: the network cousin of the no-sleep hardening above.
+# This drop-in sets the default for ALL WiFi connections (SSID-independent, so
+# it survives a connection-profile rebuild). 2 = disable power-save.
+# Note: reload applies the config for the next activation/reboot; we don't
+# bounce the live connection here, since that's the link Ansible is riding on.
+- name: Disable WiFi power-save for a reliable headless link
+  ansible.builtin.copy:
+    dest: /etc/NetworkManager/conf.d/wifi-powersave.conf
+    content: |
+      # Managed by Ansible (base role). Headless server: keep the WiFi radio
+      # awake so idle connections don't drop. 2 = disable power-save.
+      [connection]
+      wifi.powersave = 2
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload NetworkManager
+
 # --- 8. Firewall basics (firewalld) ---
 - name: Ensure firewalld is installed
   ansible.builtin.dnf:

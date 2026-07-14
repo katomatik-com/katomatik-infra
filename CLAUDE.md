@@ -98,7 +98,8 @@ homelab/
 ## Current phase
 - [x] Asahi install                ← COMPLETE (see notes below)
 - [x] Ansible playbook             ← COMPLETE (base role: hardening, no-sleep,
-                                      firewall, chrony, dnf5-automatic)
+                                      wifi-powersave-off, firewall, chrony,
+                                      dnf5-automatic)
 - [x] k3s                          ← COMPLETE (single-node v1.36.2+k3s1 via
                                       the k3s role; bundled Traefik kept)
 - [ ] Helm                         ← CURRENT

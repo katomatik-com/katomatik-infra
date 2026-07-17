@@ -7,3 +7,5 @@ collections:
   - name: ansible.posix
   # timezone
   - name: community.general
+  # sops lookup (decrypt SOPS-encrypted secrets at deploy time)
+  - name: community.sops

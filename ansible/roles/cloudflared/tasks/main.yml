@@ -1,0 +1,66 @@
+---
+# cloudflared role — Cloudflare Tunnel as a host systemd service (ADR-0002).
+#
+# The tunnel credential is decrypted from SOPS ON THE CONTROL NODE (this Mac)
+# via the community.sops lookup, and only the plaintext result is shipped to the
+# server — the age key never leaves the Mac. cloudflared then forwards all
+# inbound traffic to Traefik on localhost:80; per-host routing is Kubernetes
+# Ingress, not here.
+
+# --- 1. Install cloudflared from Cloudflare's package repo ---
+- name: Add the Cloudflare package repository
+  ansible.builtin.get_url:
+    url: https://pkg.cloudflare.com/cloudflared-ascii.repo
+    dest: /etc/yum.repos.d/cloudflared.repo
+    mode: "0644"
+
+- name: Install cloudflared
+  ansible.builtin.dnf:
+    name: cloudflared
+    state: present
+
+# --- 2. Config directory, tunnel config, and credential ---
+- name: Ensure /etc/cloudflared exists
+  ansible.builtin.file:
+    path: /etc/cloudflared
+    state: directory
+    mode: "0755"
+
+- name: Deploy the tunnel config
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: /etc/cloudflared/config.yml
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart cloudflared
+
+# Decrypt the SOPS credential locally and reconstruct the JSON cloudflared wants.
+# The .sops.yaml file stores AccountTag/TunnelID/TunnelSecret; from_yaml|to_json
+# turns it back into the credential file format.
+- name: Deploy the tunnel credential (decrypted from SOPS on the control node)
+  ansible.builtin.copy:
+    content: "{{ lookup('community.sops.sops', role_path ~ '/files/cloudflared-credentials.sops.yaml') | from_yaml | to_json }}"
+    dest: "/etc/cloudflared/{{ cloudflared_tunnel_id }}.json"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true          # never print the secret in Ansible output
+  notify: restart cloudflared
+
+# --- 3. systemd service ---
+- name: Install the cloudflared systemd unit
+  ansible.builtin.template:
+    src: cloudflared.service.j2
+    dest: /etc/systemd/system/cloudflared.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart cloudflared
+
+- name: Enable and start cloudflared
+  ansible.builtin.systemd:
+    name: cloudflared
+    state: started
+    enabled: true
+    daemon_reload: true

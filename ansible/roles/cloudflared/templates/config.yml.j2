@@ -1,0 +1,13 @@
+# Managed by Ansible (cloudflared role). Edit the role/vars, not this file.
+#
+# Names the tunnel and its credential, then a SINGLE catch-all ingress rule:
+# forward everything to Traefik on the node's host port 80 (k3s ServiceLB).
+# Per-hostname routing is done by Kubernetes Ingress behind Traefik (ADR-0002).
+
+tunnel: {{ cloudflared_tunnel_id }}
+credentials-file: /etc/cloudflared/{{ cloudflared_tunnel_id }}.json
+
+ingress:
+  # No `hostname:` => catch-all. cloudflared preserves the original Host header,
+  # so Traefik still sees e.g. argocd.kurtcebe.nl and matches the right Ingress.
+  - service: {{ cloudflared_ingress_service }}

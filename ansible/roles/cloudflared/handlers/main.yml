@@ -1,0 +1,8 @@
+---
+# daemon_reload picks up unit-file changes before restarting, so a single
+# handler covers both a changed unit and changed config/credential.
+- name: restart cloudflared
+  ansible.builtin.systemd:
+    name: cloudflared
+    state: restarted
+    daemon_reload: true

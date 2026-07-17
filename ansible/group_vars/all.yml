@@ -72,3 +72,12 @@ k3s_tls_sans:
 #      export KUBECONFIG=~/.kube/homelab.config
 k3s_kubeconfig_server: homelab.lan
 k3s_kubeconfig_local: ~/.kube/homelab.config
+
+# --- Cloudflare Tunnel (see ADR-0002, docs/cloudflare-tunnel-setup.md) ---
+# cloudflared runs as a host systemd service and forwards ALL traffic to
+# Traefik on the node's host port 80 (via k3s ServiceLB). Per-hostname routing
+# lives in Kubernetes Ingress, not here — this is a single catch-all.
+cloudflared_tunnel_name: homelab
+# The tunnel ID from `cloudflared tunnel create` — NOT a secret.
+cloudflared_tunnel_id: cee9c4b7-ce6a-406c-9a9e-f3e2ecf65c07
+cloudflared_ingress_service: http://localhost:80

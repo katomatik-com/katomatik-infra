@@ -17,3 +17,9 @@
   become: true
   roles:
     - k3s
+
+- name: Cloudflare Tunnel (host daemon)
+  hosts: homelab
+  become: true
+  roles:
+    - cloudflared

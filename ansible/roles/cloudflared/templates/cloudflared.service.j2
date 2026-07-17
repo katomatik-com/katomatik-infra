@@ -1,0 +1,17 @@
+# Managed by Ansible (cloudflared role).
+[Unit]
+Description=Cloudflare Tunnel ({{ cloudflared_tunnel_name }})
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# --no-autoupdate: we manage the version via dnf, not cloudflared's self-update.
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared/config.yml tunnel run
+Restart=on-failure
+RestartSec=5s
+# Learning simplification: runs as root. A hardened setup would use a dedicated
+# unprivileged 'cloudflared' user that can read /etc/cloudflared.
+
+[Install]
+WantedBy=multi-user.target

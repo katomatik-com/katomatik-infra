@@ -8,6 +8,11 @@
 #
 # Kept intentionally minimal — add config here as needs arise, committed to Git.
 
+global:
+  # ArgoCD's external URL AND the Ingress hostname. Reached through the
+  # Cloudflare Tunnel → Traefik (docs/cloudflare-tunnel-setup.md).
+  domain: argocd.kurtcebe.nl
+
 configs:
   params:
     # Run argocd-server WITHOUT its own TLS. We terminate TLS upstream (Traefik
@@ -16,3 +21,10 @@ configs:
     # bootstrap. Do NOT use this if argocd-server is ever exposed raw to a
     # network without an upstream terminating TLS.
     server.insecure: true
+
+server:
+  ingress:
+    # Traefik Ingress for the UI, using the hostname from global.domain above.
+    # Cloudflare terminates public TLS, so no cert/tls block here.
+    enabled: true
+    ingressClassName: traefik

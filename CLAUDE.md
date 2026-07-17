@@ -15,6 +15,7 @@ running.
 ## Full stack
 - OS: Fedora Asahi Remix (headless, server variant)
 - Config management: Ansible (OS-level setup)
+- IaC / external cloud: Terraform (Cloudflare zone, tunnel, DNS) — see ADR-0005
 - Kubernetes: k3s (single node)
 - Package deployment: Helm (chart format; rendered by ArgoCD, not run by hand)
 - GitOps: ArgoCD only, via app-of-apps (watches Git, manages cluster state,
@@ -35,6 +36,9 @@ homelab/
 │   └── site.yml
 ├── k3s/
 ├── helm/
+├── terraform/        # Cloudflare zone/tunnel/DNS (ADR-0005; built in its phase)
+├── argocd/           # ArgoCD bootstrap values + app-of-apps root
+├── apps/             # ArgoCD Application manifests
 ├── docs/
 │   └── adr/          # Architectural Decision Records (see below)
 └── README.md
@@ -55,6 +59,9 @@ homelab/
   - ADR-0001 — single-node k3s via a custom Ansible role (incl. keeping
     bundled Traefik/Ingress for now).
   - ADR-0002 — Cloudflare Tunnel as a host daemon pointed at Traefik ingress.
+  - ADR-0003 — ArgoCD-only GitOps (app-of-apps); Helmfile dropped.
+  - ADR-0004 — ArgoCD reads the private repo via a read-only SSH deploy key.
+  - ADR-0005 — Terraform for the external/Cloudflare layer (zone/tunnel/DNS).
 
 ## Secrets management — decided: SOPS + age
 - Approach: encrypt secret *values* in YAML with an age keypair, commit
@@ -111,7 +118,12 @@ homelab/
                                       app-of-apps, self-managed, automated sync;
                                       private repo via deploy key, ADR-0004)
 - [ ] Cloudflare Tunnel            ← CURRENT (host daemon → Traefik, ADR-0002;
-                                      first SOPS-encrypted secret lands here)
+                                      first SOPS-encrypted secret lands here.
+                                      Finish by exposing ArgoCD; Cloudflare-side
+                                      is codified next by Terraform)
+- [ ] Terraform (Cloudflare)       ← zone/tunnel/DNS as IaC (ADR-0005);
+                                      recreates the tunnel, supersedes the manual
+                                      cloudflared create/route steps
 - [ ] Prometheus + Grafana
 - [ ] Keycloak + Postgres
 - [ ] Own apps

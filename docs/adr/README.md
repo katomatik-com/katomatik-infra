@@ -32,3 +32,4 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0002](0002-cloudflare-tunnel-host-daemon-to-traefik.md) | Expose services via a host-daemon Cloudflare Tunnel pointed at Traefik | Accepted |
 | [0003](0003-argocd-only-gitops-helmfile-dropped.md) | GitOps reconciler — ArgoCD only (app-of-apps), Helmfile dropped | Accepted |
 | [0004](0004-argocd-repo-access-deploy-key.md) | ArgoCD reads the private repo via a read-only SSH deploy key | Accepted |
+| [0005](0005-terraform-for-cloudflare-external-layer.md) | Terraform for the external/Cloudflare layer (zone/tunnel/DNS) | Accepted |

@@ -117,14 +117,14 @@ homelab/
 - [x] ArgoCD bootstrap             ← COMPLETE (v3.4.5 via chart 10.1.3,
                                       app-of-apps, self-managed, automated sync;
                                       private repo via deploy key, ADR-0004)
-- [ ] Cloudflare Tunnel            ← CURRENT (host daemon → Traefik, ADR-0002;
-                                      first SOPS-encrypted secret lands here.
-                                      Finish by exposing ArgoCD; Cloudflare-side
-                                      is codified next by Terraform)
-- [ ] Terraform (Cloudflare)       ← zone/tunnel/DNS as IaC (ADR-0005);
-                                      recreates the tunnel, supersedes the manual
-                                      cloudflared create/route steps
-- [ ] Prometheus + Grafana
+- [x] Cloudflare Tunnel            ← COMPLETE (cloudflared host daemon → Traefik,
+                                      ADR-0002; SOPS-encrypted credential;
+                                      ArgoCD exposed at argocd.kurtcebe.nl.
+                                      Cloudflare-side codified next by Terraform)
+- [x] Terraform (Cloudflare)       ← COMPLETE (zone/tunnel/DNS as IaC, ADR-0005;
+                                      HCP remote state/exec; tunnel recreated +
+                                      handed to Ansible; docs/terraform-cloudflare.md)
+- [ ] Prometheus + Grafana         ← CURRENT
 - [ ] Keycloak + Postgres
 - [ ] Own apps
 

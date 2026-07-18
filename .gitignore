@@ -34,6 +34,17 @@ charts/
 kubeconfig
 *.kubeconfig
 
+# === Terraform ===
+# State lives in HCP, but ignore any local state + provider cache. NOTE: we DO
+# commit terraform.tfvars (non-secret config) and .terraform.lock.hcl (pinning).
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+# Ignore any local secret var files if ever used (we use HCP sensitive vars).
+*.auto.tfvars
+secret*.tfvars
+
 # === Editor / OS cruft ===
 .DS_Store
 *.swp

@@ -78,6 +78,6 @@ k3s_kubeconfig_local: ~/.kube/homelab.config
 # Traefik on the node's host port 80 (via k3s ServiceLB). Per-hostname routing
 # lives in Kubernetes Ingress, not here — this is a single catch-all.
 cloudflared_tunnel_name: homelab
-# The tunnel ID from `cloudflared tunnel create` — NOT a secret.
-cloudflared_tunnel_id: cee9c4b7-ce6a-406c-9a9e-f3e2ecf65c07
+# The tunnel ID — created by Terraform (terraform output -raw tunnel_id). Not a secret.
+cloudflared_tunnel_id: ed04df67-28e9-49d0-9cc9-1a456eb58f3a
 cloudflared_ingress_service: http://localhost:80

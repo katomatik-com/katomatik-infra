@@ -15,12 +15,24 @@ resource "cloudflare_zero_trust_tunnel_cloudflared" "homelab" {
   tunnel_secret = random_bytes.tunnel_secret.base64
 }
 
+# The Cloudflare zone for the domain. Terraform manages the zone object, but the
+# domain must already be registered elsewhere, and after apply its nameservers
+# must be pointed at the two Cloudflare assigns (see the zone_name_servers
+# output). The zone stays "Pending" until that one-time registrar change is done.
+resource "cloudflare_zone" "primary" {
+  account = {
+    id = var.cloudflare_account_id
+  }
+  name = var.cloudflare_zone_name
+  type = "full" # Cloudflare as primary DNS — the nameserver-delegation model
+}
+
 # One proxied CNAME per hostname → <tunnel-id>.cfargotunnel.com. Proxied records
 # must use ttl = 1 (automatic).
 resource "cloudflare_dns_record" "app" {
   for_each = toset(var.hostnames)
 
-  zone_id = var.cloudflare_zone_id
+  zone_id = cloudflare_zone.primary.id
   name    = each.value
   type    = "CNAME"
   content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"

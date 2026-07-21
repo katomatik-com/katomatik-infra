@@ -34,3 +34,4 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0004](0004-argocd-repo-access-deploy-key.md) | ArgoCD reads the private repo via a read-only SSH deploy key | Superseded by [0006](0006-public-repo-anonymous-https.md) |
 | [0005](0005-terraform-for-cloudflare-external-layer.md) | Terraform for the external/Cloudflare layer (zone/tunnel/DNS) | Accepted |
 | [0006](0006-public-repo-anonymous-https.md) | Public repo — ArgoCD reads it anonymously over HTTPS | Accepted |
+| [0007](0007-dedicated-katomatik-cloudflare-hcp-accounts.md) | Dedicated katomatik Cloudflare + HCP accounts; Terraform owns the zone | Accepted |

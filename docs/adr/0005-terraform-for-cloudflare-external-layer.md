@@ -4,6 +4,8 @@
 
 Accepted — 2026-07-17. **Implementation deferred** to its own phase, after the
 Cloudflare Tunnel is working end to end (ArgoCD exposed manually first).
+**Extended by [ADR-0007](0007-dedicated-katomatik-cloudflare-hcp-accounts.md)** —
+Terraform now also creates the zone, in dedicated katomatik accounts.
 
 ## Context
 

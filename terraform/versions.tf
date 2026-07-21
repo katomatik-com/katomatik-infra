@@ -7,9 +7,9 @@ terraform {
   # HCP Terraform (remote state + remote execution). Runs happen in HCP with the
   # sensitive CLOUDFLARE_API_TOKEN env var injected; state lives in HCP.
   cloud {
-    organization = "kurt_homelab"
+    organization = "katomatik"
     workspaces {
-      name = "homelab"
+      name = "katomatik-com"
     }
   }
 

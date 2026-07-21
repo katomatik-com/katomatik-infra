@@ -79,5 +79,5 @@ k3s_kubeconfig_local: ~/.kube/homelab.config
 # lives in Kubernetes Ingress, not here — this is a single catch-all.
 cloudflared_tunnel_name: homelab
 # The tunnel ID — created by Terraform (terraform output -raw tunnel_id). Not a secret.
-cloudflared_tunnel_id: ed04df67-28e9-49d0-9cc9-1a456eb58f3a
+cloudflared_tunnel_id: 959426c4-cf34-4ca1-90c4-52a57ebba06f
 cloudflared_ingress_service: http://localhost:80

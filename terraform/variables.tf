@@ -7,9 +7,10 @@ variable "cloudflare_account_id" {
   type        = string
 }
 
-variable "cloudflare_zone_id" {
-  description = "Zone ID for katomatik.com (Dashboard → the zone → Overview → API)."
+variable "cloudflare_zone_name" {
+  description = "Apex domain for the zone Terraform creates (e.g. katomatik.com)."
   type        = string
+  default     = "katomatik.com"
 }
 
 variable "tunnel_name" {

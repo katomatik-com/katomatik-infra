@@ -63,8 +63,11 @@ homelab/
   - ADR-0004 — ArgoCD reads the private repo via a read-only SSH deploy key.
     (Superseded by ADR-0006.)
   - ADR-0005 — Terraform for the external/Cloudflare layer (zone/tunnel/DNS).
+    (Extended by ADR-0007.)
   - ADR-0006 — repo made public; ArgoCD reads it anonymously over HTTPS
     (supersedes ADR-0004).
+  - ADR-0007 — dedicated katomatik Cloudflare + HCP accounts; Terraform now
+    creates/owns the zone (extends ADR-0005).
 
 ## Secrets management — decided: SOPS + age
 - Approach: encrypt secret *values* in YAML with an age keypair, commit

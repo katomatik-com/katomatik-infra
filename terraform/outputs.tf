@@ -6,6 +6,14 @@ output "tunnel_id" {
   value       = cloudflare_zero_trust_tunnel_cloudflared.homelab.id
 }
 
+# The nameservers Cloudflare assigned to the new zone. Set BOTH at the domain's
+# registrar to activate the zone — it stays "Pending" (and nothing resolves)
+# until the registrar delegates to these.
+output "zone_name_servers" {
+  description = "Point the registrar's nameservers at these to activate the zone."
+  value       = cloudflare_zone.primary.name_servers
+}
+
 # The full cloudflared credentials-file content, ready to SOPS-encrypt.
 # Sensitive because it embeds the tunnel secret. Retrieve with:
 #   terraform output -raw tunnel_credentials_json

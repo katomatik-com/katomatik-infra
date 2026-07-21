@@ -11,14 +11,14 @@ Git and decrypted by Ansible at deploy time.
 
 > **Superseded by Terraform for Parts 1 & 4.** The manual `cloudflared tunnel
 > create` / `route dns` steps below are now done by Terraform (see
-> `docs/terraform-cloudflare.md`, ADR-0005/0007) — kept here as the
+> `docs/guides/terraform-cloudflare.md`, ADR-0005/0007) — kept here as the
 > *understand-it* version. **For real setup, follow the Terraform guide.** Parts
 > 2, 3, 5, and 6 (SOPS credential, Ansible deploy, ArgoCD Ingress, end-to-end
 > test) are still current.
 
 ## Prerequisites
 
-- SOPS + age working (`docs/sops-age-setup.md`).
+- SOPS + age working (`docs/guides/sops-age-setup.md`).
 - `katomatik.com` Active on Cloudflare.
 
 ---

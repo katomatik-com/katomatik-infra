@@ -186,4 +186,4 @@ cluster). Instead:
 Next: **ArgoCD**, which reconciles a *set* of Helm releases straight from Git —
 the "codify it" layer on top of what you just learned. (An earlier plan used
 Helmfile for this middle layer; it was dropped in favour of ArgoCD-only — see
-[ADR-0003](adr/0003-argocd-only-gitops-helmfile-dropped.md).)
+[ADR-0003](../adr/0003-argocd-only-gitops-helmfile-dropped.md).)

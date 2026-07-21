@@ -50,11 +50,11 @@ and my own web apps.
 Two kinds, kept deliberately separate:
 
 - **How-to guides** (`docs/`) — reproducible, per-phase walkthroughs:
-  - [Ansible bootstrap](docs/ansible-bootstrap.md) — two fresh machines → "Ansible can manage my server"
-  - [Helm basics](docs/helm-basics.md)
-  - [SOPS + age setup](docs/sops-age-setup.md)
-  - [Cloudflare Tunnel](docs/cloudflare-tunnel-setup.md)
-  - [Terraform — Cloudflare](docs/terraform-cloudflare.md)
+  - [Ansible bootstrap](docs/guides/ansible-bootstrap.md) — two fresh machines → "Ansible can manage my server"
+  - [Helm basics](docs/guides/helm-basics.md)
+  - [SOPS + age setup](docs/guides/sops-age-setup.md)
+  - [Cloudflare Tunnel](docs/guides/cloudflare-tunnel-setup.md)
+  - [Terraform — Cloudflare](docs/guides/terraform-cloudflare.md)
 - **Decisions** (`docs/adr/`) — *why* each choice was made, and what was rejected.
   Start at the [ADR index](docs/adr/README.md).
 
@@ -67,7 +67,7 @@ The **control node** is your Mac; the **managed host** is the server.
    brew install ansible
    ansible-galaxy collection install -r ansible/requirements.yml
    ```
-2. Do the first run via the [Ansible bootstrap guide](docs/ansible-bootstrap.md)
+2. Do the first run via the [Ansible bootstrap guide](docs/guides/ansible-bootstrap.md)
    — it walks password auth → SSH keys → hardening without locking yourself out.
 3. Fill the placeholders in `ansible/inventory/hosts.ini` and
    `ansible/group_vars/all.yml`, then:
@@ -81,4 +81,4 @@ The **control node** is your Mac; the **managed host** is the server.
 
 Never commit plaintext secrets — `.gitignore` blocks the danger files, and
 values are encrypted with **SOPS + age** (the age private key is never
-committed). Setup: [docs/sops-age-setup.md](docs/sops-age-setup.md).
+committed). Setup: [docs/guides/sops-age-setup.md](docs/guides/sops-age-setup.md).

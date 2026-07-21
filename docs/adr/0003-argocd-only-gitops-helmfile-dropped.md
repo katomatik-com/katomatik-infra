@@ -45,7 +45,7 @@ cargo-culting a redundant pairing.
   cluster boundary, per ADR-0001).
 - **Helmfile is dropped from the critical path.** If we learn it, it will be a
   self-contained side-exercise clearly labelled "alternative approach, not part
-  of the running lab" — mirroring `docs/helm-basics.md`.
+  of the running lab" — mirroring `docs/guides/helm-basics.md`.
 
 ### The bootstrap in practice — the "run once"
 

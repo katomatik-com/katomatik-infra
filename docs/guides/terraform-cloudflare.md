@@ -7,7 +7,7 @@ Terraform** (remote execution), so the Cloudflare API token never touches your
 Mac.
 
 This supersedes the manual `cloudflared tunnel create` / `route dns` steps in
-`docs/cloudflare-tunnel-setup.md`.
+`docs/guides/cloudflare-tunnel-setup.md`.
 
 ## Prerequisites
 

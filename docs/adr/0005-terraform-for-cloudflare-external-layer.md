@@ -52,7 +52,7 @@ records** (CNAMEs to the tunnel).
 2. `terraform/` with the provider, the tunnel, its config, and DNS resources.
 3. `.gitignore` entries for Terraform's **sensitive state** (`*.tfstate*`,
    `.terraform/`, secret `*.tfvars`).
-4. A runbook (`docs/terraform-cloudflare.md`) superseding the manual
+4. A runbook (`docs/guides/terraform-cloudflare.md`) superseding the manual
    `tunnel create` / `route dns` steps.
 
 ## Consequences
@@ -91,4 +91,4 @@ records** (CNAMEs to the tunnel).
 - [ADR-0002](0002-cloudflare-tunnel-host-daemon-to-traefik.md) — the tunnel
   architecture Terraform will provision the Cloudflare side of.
 - Supersedes the manual `cloudflared tunnel create` / `route dns` steps in
-  `docs/cloudflare-tunnel-setup.md`.
+  `docs/guides/cloudflare-tunnel-setup.md`.

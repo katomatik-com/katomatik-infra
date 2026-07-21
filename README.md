@@ -1,99 +1,84 @@
 # Homelab
 
-Learning DevOps / Kubernetes / GitOps by building a real home lab server.
-See [CLAUDE.md](./CLAUDE.md) for the full plan, stack, and decisions.
+A single-node home server built the slow way — Ansible, k3s, GitOps, and IaC —
+to *understand* the DevOps / Kubernetes / GitOps tooling, not just get it
+running. Every significant decision is written down as an ADR so the reasoning
+survives, not just the resulting config.
 
-## Current phase: Ansible base role
+Public infrastructure for **katomatik.com** (ArgoCD runs at `argocd.katomatik.com`).
 
-OS-level setup + hardening of the Fedora Asahi server from your Mac.
+## Hardware
 
-> New to the setup? Start with the step-by-step
-> [Ansible bootstrap guide](./docs/ansible-bootstrap.md) — it takes two fresh
-> machines to "Ansible can manage my server" (users, SSH keys, first run).
+- M1 MacBook (16 GB RAM, ~165 GB allocated to Linux), dual-boot Fedora Asahi
+  Remix (headless) + macOS.
+- KPN Box 12 over WiFi (no ethernet yet); the server is reachable on the LAN as
+  `homelab.lan`.
 
-### One-time setup on the control node (your Mac)
+## Stack
 
-```sh
-# 1. Install Ansible + the collection the base role uses
-brew install ansible                       # or: pipx install ansible
-ansible-galaxy collection install -r ansible/requirements.yml
+| Layer | Choice | Notes |
+|---|---|---|
+| OS | Fedora Asahi Remix (headless) | |
+| Config management | Ansible | OS-level setup only — stops at the cluster boundary |
+| Kubernetes | k3s (single node) | bundled Traefik kept — [ADR-0001](docs/adr/0001-k3s-single-node-custom-ansible-role.md) |
+| Packaging | Helm | chart format, rendered by ArgoCD (not run by hand) |
+| GitOps | ArgoCD (app-of-apps) | self-manages after bootstrap; Helmfile dropped — [ADR-0003](docs/adr/0003-argocd-only-gitops-helmfile-dropped.md) |
+| Secrets | SOPS + age | values encrypted in Git, decrypted at render time |
+| Ingress | Traefik | bundled with k3s |
+| Tunnel | Cloudflare Tunnel | `cloudflared` host daemon → Traefik — [ADR-0002](docs/adr/0002-cloudflare-tunnel-host-daemon-to-traefik.md) |
+| External / IaC | Terraform | Cloudflare zone/tunnel/DNS, state in HCP — [ADR-0005](docs/adr/0005-terraform-for-cloudflare-external-layer.md) / [0007](docs/adr/0007-dedicated-katomatik-cloudflare-hcp-accounts.md) |
 
-# 2. Generate an SSH key for the homelab (if you don't have one)
-ssh-keygen -t ed25519 -C "homelab"         # -> ~/.ssh/id_ed25519[.pub]
+*Planned:* Prometheus + Grafana (observability), Keycloak + PostgreSQL (auth),
+and my own web apps.
+
+## Repo layout
+
+```
+.
+├── ansible/          # OS setup: base, k3s, cloudflared roles + site.yml
+├── argocd/           # ArgoCD bootstrap values + app-of-apps root
+├── apps/             # ArgoCD Application manifests
+├── terraform/        # Cloudflare zone/tunnel/DNS (state in HCP)
+├── docs/             # how-to guides (per phase)
+│   └── adr/          # Architectural Decision Records — the "why"
+├── .sops.yaml        # which files SOPS encrypts, and to which age key
+└── CLAUDE.md         # working conventions for AI-assisted sessions
 ```
 
-### Fill in the placeholders
+## Documentation
 
-- `ansible/inventory/hosts.ini` — set `ansible_user`, and the server IP if
-  it isn't `192.168.2.10` yet (check with `ip addr` on the server).
-- `ansible/group_vars/all.yml` — set `ssh_user`, confirm `ssh_public_key_file`.
+Two kinds, kept deliberately separate:
 
-### Run it
+- **How-to guides** (`docs/`) — reproducible, per-phase walkthroughs:
+  - [Ansible bootstrap](docs/ansible-bootstrap.md) — two fresh machines → "Ansible can manage my server"
+  - [Helm basics](docs/helm-basics.md)
+  - [SOPS + age setup](docs/sops-age-setup.md)
+  - [Cloudflare Tunnel](docs/cloudflare-tunnel-setup.md)
+  - [Terraform — Cloudflare](docs/terraform-cloudflare.md)
+- **Decisions** (`docs/adr/`) — *why* each choice was made, and what was rejected.
+  Start at the [ADR index](docs/adr/README.md).
 
-```sh
-cd ansible
+## Getting started
 
-# FIRST run: no SSH key on the server yet, so authenticate with a password.
-# -k = --ask-pass (SSH password), -K = --ask-become-pass (sudo password).
-# IMPORTANT: leave ssh_password_authentication = "yes" in group_vars for
-# this first run, so you don't lock yourself out mid-play.
-ansible-playbook site.yml -k -K
+The **control node** is your Mac; the **managed host** is the server.
 
-# CONFIRM key login works:
-ssh <ssh_user>@<server-ip>
-
-# THEN harden: set ssh_password_authentication: "no" in group_vars and
-# re-run. Now key auth is the only way in.
-ansible-playbook site.yml -K
-```
-
-### Verify afterwards
-
-```sh
-ssh homelab@<ip> 'systemctl is-enabled dnf-automatic.timer; \
-  systemctl is-active firewalld; \
-  systemctl status sleep.target | head -3'   # should show: masked
-```
-
-## Next phase: k3s cluster
-
-Installs single-node k3s on the server via the `k3s` role (see
-[ADR-0001](./docs/adr/0001-k3s-single-node-custom-ansible-role.md)). Ansible
-stops at the cluster boundary — it installs k3s, manages the service, opens the
-firewall, and fetches the kubeconfig back to your Mac.
-
-### One-time setup on the control node (your Mac)
-
-The fetched kubeconfig points at the cluster by name (`homelab.lan`), not by IP,
-so it survives DHCP changes. Map that name to the server's current IP in your
-Mac's `/etc/hosts` (Ansible can't edit your Mac's hosts file for you):
-
-```sh
-# Use the server's current IP (check with `ip addr` on the server).
-sudo sh -c 'echo "192.168.2.42  homelab homelab.lan" >> /etc/hosts'
-```
-
-> If the server's IP changes, update this one line — the kubeconfig keeps
-> working. `homelab.lan` (not `.local`) avoids macOS mDNS/Bonjour interception.
-
-### Run it
-
-```sh
-cd ansible
-ansible-playbook site.yml            # runs base (idempotent), then the k3s play
-```
-
-### Verify afterwards
-
-```sh
-export KUBECONFIG=~/.kube/homelab.config
-kubectl get nodes                    # 'homelab' should be Ready
-kubectl get pods -A                  # traefik, coredns, metrics-server,
-                                     # local-path-provisioner, svclb-traefik
-```
+1. Install tooling on the Mac:
+   ```sh
+   brew install ansible
+   ansible-galaxy collection install -r ansible/requirements.yml
+   ```
+2. Do the first run via the [Ansible bootstrap guide](docs/ansible-bootstrap.md)
+   — it walks password auth → SSH keys → hardening without locking yourself out.
+3. Fill the placeholders in `ansible/inventory/hosts.ini` and
+   `ansible/group_vars/all.yml`, then:
+   ```sh
+   cd ansible && ansible-playbook site.yml
+   ```
+4. Later layers (k3s, Cloudflare Tunnel, Terraform) each have their own guide
+   linked above.
 
 ## Secrets
 
-This repo uses **SOPS + age** (see CLAUDE.md). Never commit plaintext
-secrets — `.gitignore` blocks them. SOPS tooling gets set up later, just
-before the first component that needs a secret.
+Never commit plaintext secrets — `.gitignore` blocks the danger files, and
+values are encrypted with **SOPS + age** (the age private key is never
+committed). Setup: [docs/sops-age-setup.md](docs/sops-age-setup.md).

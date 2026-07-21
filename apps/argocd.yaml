@@ -33,7 +33,7 @@ spec:
     # Source 2 — our repo, providing the value file (reference only, no path).
     # SSH URL: this repo is private, so ArgoCD reads it via a read-only deploy
     # key (an out-of-band bootstrap Secret in the argocd namespace). See ADR-0004.
-    - repoURL: git@github.com:kurtcebe/homelab.git
+    - repoURL: git@github.com:katomatik-com/katomatik-infra.git
       targetRevision: main
       ref: values
   destination:

@@ -8,7 +8,7 @@ variable "cloudflare_account_id" {
 }
 
 variable "cloudflare_zone_id" {
-  description = "Zone ID for kurtcebe.nl (Dashboard → the zone → Overview → API)."
+  description = "Zone ID for katomatik.com (Dashboard → the zone → Overview → API)."
   type        = string
 }
 

@@ -9,5 +9,5 @@ credentials-file: /etc/cloudflared/{{ cloudflared_tunnel_id }}.json
 
 ingress:
   # No `hostname:` => catch-all. cloudflared preserves the original Host header,
-  # so Traefik still sees e.g. argocd.kurtcebe.nl and matches the right Ingress.
+  # so Traefik still sees e.g. argocd.katomatik.com and matches the right Ingress.
   - service: {{ cloudflared_ingress_service }}

@@ -11,7 +11,7 @@
 global:
   # ArgoCD's external URL AND the Ingress hostname. Reached through the
   # Cloudflare Tunnel → Traefik (docs/cloudflare-tunnel-setup.md).
-  domain: argocd.kurtcebe.nl
+  domain: argocd.katomatik.com
 
 configs:
   params:

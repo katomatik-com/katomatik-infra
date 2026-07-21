@@ -26,8 +26,8 @@ permission set — note the tunnel permission is **Account**-scoped, not zone:
 
 | Scope | Permission | Level |
 |---|---|---|
-| Zone `kurtcebe.nl` | DNS | **Write** (Edit) |
-| Zone `kurtcebe.nl` | Zone | **Read** |
+| Zone `katomatik.com` | DNS | **Write** (Edit) |
+| Zone `katomatik.com` | Zone | **Read** |
 | Account `<account-id>` | Cloudflare Tunnel | **Write** (Edit) |
 | Account `<account-id>` | Account Settings | **Read** |
 
@@ -60,7 +60,7 @@ The Cloudflare provider reads this env var directly (see `provider "cloudflare"
 ## Part 2 — Config values
 
 `terraform/terraform.tfvars` (committed, non-secret) — fill the two IDs from the
-dashboard (open `kurtcebe.nl` → Overview → the "API" box shows both):
+dashboard (open `katomatik.com` → Overview → the "API" box shows both):
 
 ```hcl
 cloudflare_account_id = "<account-id>"
@@ -124,7 +124,7 @@ cd ../ansible && ansible-playbook site.yml -K
 ```sh
 ssh <user>@homelab.lan 'systemctl status cloudflared --no-pager | tail -6'  # "Registered tunnel connection" x4
 cloudflared tunnel info homelab            # active connections
-curl -sSI https://argocd.kurtcebe.nl | head -1   # HTTP/2 200
+curl -sSI https://argocd.katomatik.com | head -1   # HTTP/2 200
 ```
 
 ---

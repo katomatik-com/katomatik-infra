@@ -18,7 +18,7 @@ Git and decrypted by Ansible at deploy time.
 ## Prerequisites
 
 - SOPS + age working (`docs/sops-age-setup.md`).
-- `kurtcebe.nl` Active on Cloudflare.
+- `katomatik.com` Active on Cloudflare.
 
 ---
 
@@ -30,7 +30,7 @@ Install cloudflared and create the tunnel (once). `login` needs a browser.
 brew install cloudflared
 
 # Authorize cloudflared for your Cloudflare zone (opens browser; pick
-# kurtcebe.nl). Writes ~/.cloudflared/cert.pem
+# katomatik.com). Writes ~/.cloudflared/cert.pem
 cloudflared tunnel login
 
 # Create the tunnel. Writes ~/.cloudflared/<TUNNEL-ID>.json (the SECRET) and
@@ -121,15 +121,15 @@ cloudflared tunnel info homelab         # should show active connector(s)
 Point the hostname at the tunnel (creates a proxied CNAME in Cloudflare):
 
 ```sh
-cloudflared tunnel route dns homelab argocd.kurtcebe.nl
-dig +short argocd.kurtcebe.nl           # resolves to Cloudflare IPs (proxied)
+cloudflared tunnel route dns homelab argocd.katomatik.com
+dig +short argocd.katomatik.com           # resolves to Cloudflare IPs (proxied)
 ```
 
 ---
 
 ## Part 5 — Expose the ArgoCD UI (Ingress via GitOps)
 
-`argocd/values.yaml` now sets `global.domain: argocd.kurtcebe.nl` and enables a
+`argocd/values.yaml` now sets `global.domain: argocd.katomatik.com` and enables a
 Traefik Ingress on `argocd-server`. Commit + push it; ArgoCD (automated sync)
 applies the Ingress itself:
 
@@ -141,7 +141,7 @@ Watch ArgoCD pick it up (or Hard Refresh the `argocd` app in the UI):
 
 ```sh
 export KUBECONFIG=~/.kube/homelab.config
-kubectl -n argocd get ingress            # an ingress for argocd.kurtcebe.nl appears
+kubectl -n argocd get ingress            # an ingress for argocd.katomatik.com appears
 ```
 
 ---
@@ -149,10 +149,10 @@ kubectl -n argocd get ingress            # an ingress for argocd.kurtcebe.nl app
 ## Part 6 — End-to-end test
 
 ```sh
-curl -sSI https://argocd.kurtcebe.nl | head -5     # expect HTTP 200
+curl -sSI https://argocd.katomatik.com | head -5     # expect HTTP 200
 ```
 
-Then open **https://argocd.kurtcebe.nl** in a browser — the ArgoCD login, served
+Then open **https://argocd.katomatik.com** in a browser — the ArgoCD login, served
 through Cloudflare's TLS, down the tunnel, via Traefik, to `argocd-server`.
 Log in as `admin` (password from `argocd-initial-admin-secret`). You can retire
 the `kubectl port-forward` now.
@@ -161,7 +161,7 @@ The full chain, proven:
 
 ```
 browser → Cloudflare (TLS) → tunnel → cloudflared (host) → localhost:80
-        → Traefik → Ingress(argocd.kurtcebe.nl) → argocd-server
+        → Traefik → Ingress(argocd.katomatik.com) → argocd-server
 ```
 
 ---
@@ -174,12 +174,12 @@ browser → Cloudflare (TLS) → tunnel → cloudflared (host) → localhost:80
 - **530 / 1033:** the tunnel isn't connected — check `systemctl status
   cloudflared` and its journal on the server.
 - **DNS not resolving:** the `route dns` CNAME may still be propagating; re-run
-  `dig +short argocd.kurtcebe.nl`.
+  `dig +short argocd.katomatik.com`.
 - **Redirect loop / TLS errors:** confirm `server.insecure: true` is set (it is)
   so argocd-server serves plain HTTP behind Traefik.
 
 ## Adding more services later
 
 Per hostname it's just two steps — no cloudflared change:
-1. `cloudflared tunnel route dns homelab <name>.kurtcebe.nl`
-2. add a Kubernetes Ingress for `<name>.kurtcebe.nl` (committed to Git).
+1. `cloudflared tunnel route dns homelab <name>.katomatik.com`
+2. add a Kubernetes Ingress for `<name>.katomatik.com` (committed to Git).

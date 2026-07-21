@@ -1,5 +1,5 @@
 # Non-secret config (safe to commit). Fill in the two IDs from the Cloudflare
-# dashboard: open kurtcebe.nl → Overview → the "API" box on the right shows both
+# dashboard: open katomatik.com → Overview → the "API" box on the right shows both
 # the Zone ID and the Account ID.
 
 cloudflare_account_id = "0e467fc5ed24bc17b192ac373f3d8fb8"

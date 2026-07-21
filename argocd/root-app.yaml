@@ -18,7 +18,7 @@ spec:
   project: default
   source:
     # SSH URL: private repo, read-only deploy key credential (ADR-0004).
-    repoURL: git@github.com:kurtcebe/homelab.git
+    repoURL: git@github.com:katomatik-com/katomatik-infra.git
     targetRevision: main
     path: apps                 # every Application manifest in apps/ becomes a child
   destination:

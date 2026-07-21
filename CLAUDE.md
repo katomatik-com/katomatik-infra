@@ -119,7 +119,7 @@ homelab/
                                       private repo via deploy key, ADR-0004)
 - [x] Cloudflare Tunnel            ← COMPLETE (cloudflared host daemon → Traefik,
                                       ADR-0002; SOPS-encrypted credential;
-                                      ArgoCD exposed at argocd.kurtcebe.nl.
+                                      ArgoCD exposed at argocd.katomatik.com.
                                       Cloudflare-side codified next by Terraform)
 - [x] Terraform (Cloudflare)       ← COMPLETE (zone/tunnel/DNS as IaC, ADR-0005;
                                       HCP remote state/exec; tunnel recreated +

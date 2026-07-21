@@ -39,7 +39,8 @@ and my own web apps.
 ├── argocd/           # ArgoCD bootstrap values + app-of-apps root
 ├── apps/             # ArgoCD Application manifests
 ├── terraform/        # Cloudflare zone/tunnel/DNS (state in HCP)
-├── docs/             # how-to guides (per phase)
+├── docs/
+│   ├── guides/       # how-to guides (per phase)
 │   └── adr/          # Architectural Decision Records — the "why"
 ├── .sops.yaml        # which files SOPS encrypts, and to which age key
 └── CLAUDE.md         # working conventions for AI-assisted sessions
@@ -49,7 +50,7 @@ and my own web apps.
 
 Two kinds, kept deliberately separate:
 
-- **How-to guides** (`docs/`) — reproducible, per-phase walkthroughs:
+- **How-to guides** (`docs/guides/`) — reproducible, per-phase walkthroughs:
   - [Ansible bootstrap](docs/guides/ansible-bootstrap.md) — two fresh machines → "Ansible can manage my server"
   - [Helm basics](docs/guides/helm-basics.md)
   - [SOPS + age setup](docs/guides/sops-age-setup.md)

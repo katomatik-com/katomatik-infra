@@ -1,0 +1,32 @@
+# Application: the katomatik.com static site — the lab's first real workload.
+#
+# This is a CHILD of the app-of-apps root (argocd/root-app.yaml). The root scans
+# apps/ and turns every Application manifest here into a running app; committing
+# this file is what deploys the site. See docs/guides/add-an-app.md for the full
+# walkthrough, and ADR-0008 for why apps are structured this way.
+#
+# Unlike apps/argocd.yaml (a remote Helm chart), this points at plain manifests
+# in THIS repo — the natural fit for a small static site (ADR-0008).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: katomatik-web
+  namespace: argocd            # ArgoCD watches this namespace for Applications
+spec:
+  project: default
+  source:
+    # Anonymous HTTPS — the repo is public (ADR-0006), so no credential needed.
+    repoURL: https://github.com/katomatik-com/katomatik-infra.git
+    targetRevision: main
+    path: manifests/katomatik-web    # the plain-YAML workload dir
+  destination:
+    server: https://kubernetes.default.svc   # this cluster
+    namespace: katomatik-web                  # one namespace per app
+  syncPolicy:
+    # Same GitOps discipline as the rest of the lab: apply on Git change, revert
+    # manual cluster edits (selfHeal), delete resources removed from Git (prune).
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true    # the katomatik-web namespace is made on first sync

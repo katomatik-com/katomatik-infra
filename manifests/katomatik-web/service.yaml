@@ -1,0 +1,21 @@
+# A stable in-cluster address for the pods. The Deployment's pods come and go
+# (and get new IPs); this Service gives them one name (katomatik-web) and one
+# virtual IP that the Ingress routes to.
+#
+# Port mapping to notice: the Service listens on 80 but forwards to the pod's
+# `http` port (8080). Callers (the Ingress) speak to :80; the container keeps
+# its own 8080. targetPort references the NAME from the Deployment, so if the
+# container port ever changes, only the Deployment edits.
+apiVersion: v1
+kind: Service
+metadata:
+  name: katomatik-web
+  labels:
+    app.kubernetes.io/name: katomatik-web
+spec:
+  selector:
+    app.kubernetes.io/name: katomatik-web   # matches the pod labels
+  ports:
+    - name: http
+      port: 80
+      targetPort: http    # the container's named port (8080)

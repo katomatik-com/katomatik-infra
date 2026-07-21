@@ -35,3 +35,4 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0005](0005-terraform-for-cloudflare-external-layer.md) | Terraform for the external/Cloudflare layer (zone/tunnel/DNS) | Accepted |
 | [0006](0006-public-repo-anonymous-https.md) | Public repo — ArgoCD reads it anonymously over HTTPS | Accepted |
 | [0007](0007-dedicated-katomatik-cloudflare-hcp-accounts.md) | Dedicated katomatik Cloudflare + HCP accounts; Terraform owns the zone | Accepted |
+| [0008](0008-app-delivery-plain-manifests-and-apex-routing.md) | App delivery — plain manifests per app, apex + www routing | Accepted |

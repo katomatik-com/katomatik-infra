@@ -7,4 +7,7 @@ cloudflare_account_id = "cf331c406ef912b5bd246bc2b21e42b2"
 cloudflare_zone_name  = "katomatik.com"
 
 tunnel_name = "homelab"
-hostnames   = ["argocd"]
+# Subdomains routed through the tunnel. The apex (katomatik.com) is NOT here —
+# it's handled by cloudflare_dns_record.apex in main.tf (CNAME flattening). "www"
+# gets a record so Traefik can 301 it to the apex (manifests/katomatik-web).
+hostnames = ["argocd", "www"]

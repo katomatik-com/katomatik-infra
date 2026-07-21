@@ -37,7 +37,8 @@ and my own web apps.
 .
 ├── ansible/          # OS setup: base, k3s, cloudflared roles + site.yml
 ├── argocd/           # ArgoCD bootstrap values + app-of-apps root
-├── apps/             # ArgoCD Application manifests
+├── apps/             # ArgoCD Application manifests (one per app)
+├── manifests/        # plain Kubernetes YAML per app (referenced by apps/)
 ├── terraform/        # Cloudflare zone/tunnel/DNS (state in HCP)
 ├── docs/
 │   ├── guides/       # how-to guides (per phase)
@@ -56,6 +57,7 @@ Two kinds, kept deliberately separate:
   - [SOPS + age setup](docs/guides/sops-age-setup.md)
   - [Cloudflare Tunnel](docs/guides/cloudflare-tunnel-setup.md)
   - [Terraform — Cloudflare](docs/guides/terraform-cloudflare.md)
+  - [Adding an app](docs/guides/add-an-app.md) — deploy a workload and serve it at a public hostname
 - **Decisions** (`docs/adr/`) — *why* each choice was made, and what was rejected.
   Start at the [ADR index](docs/adr/README.md).
 

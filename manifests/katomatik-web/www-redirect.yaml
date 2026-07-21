@@ -1,0 +1,51 @@
+# Canonical-host redirect: www.katomatik.com -> katomatik.com (301).
+#
+# We keep this in the cluster (Traefik) rather than as a Cloudflare edge rule, to
+# stay consistent with the project's routing philosophy — per-hostname routing
+# lives behind Traefik, and the Cloudflare/Terraform layer stays thin (ADR-0002).
+# It also teaches Traefik's Middleware CRD.
+#
+# Two objects:
+#   1. A Middleware that rewrites any www URL to the apex over https.
+#   2. An Ingress for www that attaches that Middleware. Traefik runs the
+#      middleware BEFORE the backend, so www traffic is redirected and never
+#      really reaches the pod — but a backend is still required syntactically.
+
+apiVersion: traefik.io/v1alpha1     # Traefik v3 (bundled with k3s v1.36)
+kind: Middleware
+metadata:
+  name: www-to-apex
+  labels:
+    app.kubernetes.io/name: katomatik-web
+spec:
+  redirectRegex:
+    # Traefik sees plain http here (TLS was terminated at Cloudflare), so match
+    # http OR https and always send the browser to the https apex. ${1} is the
+    # captured path, so deep links (/foo/bar) survive the redirect.
+    regex: "^https?://www\\.katomatik\\.com/(.*)"
+    replacement: "https://katomatik.com/${1}"
+    permanent: true                 # 301, not a temporary 302
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: katomatik-web-www
+  labels:
+    app.kubernetes.io/name: katomatik-web
+  annotations:
+    # Attach the Middleware above. Format is <namespace>-<name>@kubernetescrd;
+    # the namespace (katomatik-web) is set by the Application's destination.
+    traefik.ingress.kubernetes.io/router.middlewares: katomatik-web-www-to-apex@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: www.katomatik.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:               # required, but never served — the redirect fires first
+              service:
+                name: katomatik-web
+                port:
+                  number: 80

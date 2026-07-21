@@ -27,7 +27,7 @@ resource "cloudflare_zone" "primary" {
   type = "full" # Cloudflare as primary DNS — the nameserver-delegation model
 }
 
-# One proxied CNAME per hostname → <tunnel-id>.cfargotunnel.com. Proxied records
+# One proxied CNAME per SUBDOMAIN → <tunnel-id>.cfargotunnel.com. Proxied records
 # must use ttl = 1 (automatic).
 resource "cloudflare_dns_record" "app" {
   for_each = toset(var.hostnames)
@@ -39,4 +39,18 @@ resource "cloudflare_dns_record" "app" {
   proxied = true
   ttl     = 1
   comment = "Managed by Terraform — routes ${each.value} through the homelab tunnel"
+}
+
+# The apex (katomatik.com) is a special case: DNS forbids a real CNAME at a zone
+# apex, but Cloudflare's CNAME flattening lets a PROXIED apex CNAME resolve to the
+# tunnel anyway. Kept as its own resource because it doesn't fit the subdomain
+# for_each above — its name is the zone itself, not <label>.zone.
+resource "cloudflare_dns_record" "apex" {
+  zone_id = cloudflare_zone.primary.id
+  name    = cloudflare_zone.primary.name # katomatik.com
+  type    = "CNAME"
+  content = "${cloudflare_zero_trust_tunnel_cloudflared.homelab.id}.cfargotunnel.com"
+  proxied = true
+  ttl     = 1
+  comment = "Managed by Terraform — routes the apex through the homelab tunnel"
 }

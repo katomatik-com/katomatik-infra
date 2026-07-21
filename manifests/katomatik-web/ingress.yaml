@@ -1,0 +1,28 @@
+# The public entrypoint for the apex, katomatik.com.
+#
+# How a request gets here: Cloudflare (TLS + proxy) -> the tunnel -> cloudflared
+# on the host -> Traefik on :80 (the tunnel's single catch-all, see ADR-0002).
+# cloudflared preserves the original Host header, so Traefik sees
+# `katomatik.com` and this Ingress's host rule is what actually selects the app.
+#
+# No TLS block: Cloudflare terminates HTTPS at its edge, so inside the cluster
+# everything is plain HTTP. Adding certs here would be a redundant second layer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: katomatik-web
+  labels:
+    app.kubernetes.io/name: katomatik-web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: katomatik.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: katomatik-web
+                port:
+                  number: 80    # the Service port, not the container's 8080

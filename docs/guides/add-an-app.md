@@ -44,6 +44,19 @@ The steps below build both halves.
   for now).
 - The image **tag pinned to an immutable reference** (a git commit hash or a
   digest), never `:latest`. GitOps means "what's deployed" is a line in Git.
+- The image **must include a `linux/arm64` layer.** The node is an M1 / Asahi
+  box (arm64), so an `amd64`-only image fails to pull with
+  `no match for platform in manifest` — and containerd will **not** emulate it.
+  Build multi-arch:
+
+  ```sh
+  docker buildx build --platform linux/amd64,linux/arm64 \
+    -t ghcr.io/<org>/<image>:<sha> --push .
+  ```
+
+  Check what a tag actually ships with
+  `docker manifest inspect <image>:<tag>` — you want a `linux/arm64` entry (an
+  `unknown/unknown` line is just buildx's provenance attestation, ignore it).
 
 ## 1. Workload manifests — `manifests/<name>/`
 
@@ -193,6 +206,9 @@ curl -I https://www.katomatik.com     # expect: 301 → https://katomatik.com
   Confirm the `Application` is there (not in `manifests/`) and pushed.
 - **Pods `ImagePullBackOff`** — the GHCR package is still private, or the tag
   doesn't exist. Flip the package to public, or fix the tag.
+- **`ErrImagePull: no match for platform in manifest`** — the image has no
+  `linux/arm64` layer (see prerequisites). Rebuild multi-arch; emulation is not
+  an option on this node.
 - **`404 page not found` from Traefik** — the `Host` in the Ingress doesn't
   match the hostname you requested, or the CNAME isn't applied yet.
 - **`www` doesn't redirect** — the middleware annotation namespace prefix must

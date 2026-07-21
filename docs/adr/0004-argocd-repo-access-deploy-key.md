@@ -51,7 +51,7 @@ ArgoCD authenticates to the private repo with a **read-only SSH deploy key**.
   credential cannot be, by definition). See **Setup steps** below for the exact
   commands.
 - All Application manifests reference the repo by its **SSH URL**
-  (`git@github.com:katomatik-com/katomatik-infra.git`) so they match this credential. GitHub's
+  (`git@github.com:kurtcebe/homelab.git`) so they match this credential. GitHub's
   host key is already in ArgoCD's shipped `argocd-ssh-known-hosts-cm`, so no
   known-hosts step is needed.
 
@@ -73,8 +73,8 @@ All from the control node (the Mac); for the `kubectl` steps
 
    ```sh
    gh repo deploy-key add ~/.ssh/homelab_argocd_deploy.pub \
-     -R katomatik-com/katomatik-infra --title argocd-readonly
-   gh repo deploy-key list -R katomatik-com/katomatik-infra      # verify
+     -R kurtcebe/homelab --title argocd-readonly
+   gh repo deploy-key list -R kurtcebe/homelab      # verify
    ```
 
 3. **Apply the PRIVATE key as an ArgoCD repository Secret** — `--from-file`
@@ -87,7 +87,7 @@ All from the control node (the Mac); for the `kubectl` steps
    ```sh
    kubectl -n argocd create secret generic repo-homelab \
      --from-literal=type=git \
-     --from-literal=url=git@github.com:katomatik-com/katomatik-infra.git \
+     --from-literal=url=git@github.com:kurtcebe/homelab.git \
      --from-file=sshPrivateKey="$HOME/.ssh/homelab_argocd_deploy"
    kubectl -n argocd label secret repo-homelab \
      argocd.argoproj.io/secret-type=repository

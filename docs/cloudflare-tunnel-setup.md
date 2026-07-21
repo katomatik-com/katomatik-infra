@@ -9,11 +9,12 @@ Kubernetes Ingress. TLS terminates at Cloudflare — no certs for us.
 This is also **SOPS's first real use**: the tunnel credential is encrypted in
 Git and decrypted by Ansible at deploy time.
 
-> **Manual now, Terraform later.** Parts 1 and 4 below (`cloudflared tunnel
-> create` and `route dns`) create Cloudflare-side resources by hand. These are
-> the *understand-it* version and will be **codified by Terraform** in its own
-> phase (ADR-0005) — which **recreates** the tunnel (new ID/secret → re-encrypt
-> the credential). They're kept here so we can finish exposing ArgoCD first.
+> **Superseded by Terraform for Parts 1 & 4.** The manual `cloudflared tunnel
+> create` / `route dns` steps below are now done by Terraform (see
+> `docs/terraform-cloudflare.md`, ADR-0005/0007) — kept here as the
+> *understand-it* version. **For real setup, follow the Terraform guide.** Parts
+> 2, 3, 5, and 6 (SOPS credential, Ansible deploy, ArgoCD Ingress, end-to-end
+> test) are still current.
 
 ## Prerequisites
 

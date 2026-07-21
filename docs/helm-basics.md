@@ -177,11 +177,13 @@ lab we **won't** `helm install` manually — that would be a second source of
 truth competing with Git (the same boundary rule we kept for Ansible vs the
 cluster). Instead:
 
-- The **committed artifacts** — a chart reference and a `values.yaml` (soon a
-  `helmfile.yaml`) — are the source of truth.
+- The **committed artifacts** — a chart reference and a `values.yaml` — are the
+  source of truth.
 - **ArgoCD** runs the render-and-apply from Git for us.
 - `helm template` and `helm install --dry-run` stay in the toolbox as
   **learning / validation** aids that never touch the cluster.
 
-Next: **Helmfile**, which declares a *set* of Helm releases (repos + charts +
-values) in one file — the "codify it" layer on top of what you just learned.
+Next: **ArgoCD**, which reconciles a *set* of Helm releases straight from Git —
+the "codify it" layer on top of what you just learned. (An earlier plan used
+Helmfile for this middle layer; it was dropped in favour of ArgoCD-only — see
+[ADR-0003](adr/0003-argocd-only-gitops-helmfile-dropped.md).)

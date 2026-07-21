@@ -2,10 +2,10 @@
 
 A hands-on setup guide for the homelab's secret-encryption tooling. You do this
 **once** on the control node (your Mac). The goal: be able to commit secrets to
-this (private) Git repo with their **values encrypted**, decryptable only by the
-age private key you generate here.
+this Git repo — which is **public**, so encryption is essential — with their
+**values encrypted**, decryptable only by the age private key you generate here.
 
-Background/decision: `CLAUDE.md` (Secrets management) and the ADRs. Concept
+Background/decision: `CLAUDE.md` (Secrets — SOPS + age) and the ADRs. Concept
 recap: SOPS encrypts the *values* in a YAML/JSON file (keys stay readable) using
 a random data key, which it wraps for each **age recipient** (public key). Only
 the age **private key** can unwrap it.

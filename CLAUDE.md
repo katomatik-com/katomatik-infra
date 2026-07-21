@@ -61,7 +61,10 @@ homelab/
   - ADR-0002 — Cloudflare Tunnel as a host daemon pointed at Traefik ingress.
   - ADR-0003 — ArgoCD-only GitOps (app-of-apps); Helmfile dropped.
   - ADR-0004 — ArgoCD reads the private repo via a read-only SSH deploy key.
+    (Superseded by ADR-0006.)
   - ADR-0005 — Terraform for the external/Cloudflare layer (zone/tunnel/DNS).
+  - ADR-0006 — repo made public; ArgoCD reads it anonymously over HTTPS
+    (supersedes ADR-0004).
 
 ## Secrets management — decided: SOPS + age
 - Approach: encrypt secret *values* in YAML with an age keypair, commit

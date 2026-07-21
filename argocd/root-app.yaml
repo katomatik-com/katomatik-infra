@@ -17,8 +17,9 @@ metadata:
 spec:
   project: default
   source:
-    # SSH URL: private repo, read-only deploy key credential (ADR-0004).
-    repoURL: git@github.com:katomatik-com/katomatik-infra.git
+    # HTTPS URL: the repo is public, so ArgoCD clones it anonymously — no
+    # credential needed (supersedes the ADR-0004 deploy key; see ADR-0006).
+    repoURL: https://github.com/katomatik-com/katomatik-infra.git
     targetRevision: main
     path: apps                 # every Application manifest in apps/ becomes a child
   destination:

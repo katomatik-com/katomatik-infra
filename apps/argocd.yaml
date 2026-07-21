@@ -31,9 +31,9 @@ spec:
         valueFiles:
           - $values/argocd/values.yaml   # resolved from source 2 via the ref
     # Source 2 — our repo, providing the value file (reference only, no path).
-    # SSH URL: this repo is private, so ArgoCD reads it via a read-only deploy
-    # key (an out-of-band bootstrap Secret in the argocd namespace). See ADR-0004.
-    - repoURL: git@github.com:katomatik-com/katomatik-infra.git
+    # HTTPS URL: the repo is public, so ArgoCD clones it anonymously — no
+    # credential needed (supersedes the ADR-0004 deploy key; see ADR-0006).
+    - repoURL: https://github.com/katomatik-com/katomatik-infra.git
       targetRevision: main
       ref: values
   destination:

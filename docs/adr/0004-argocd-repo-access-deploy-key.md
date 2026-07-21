@@ -2,7 +2,11 @@
 
 ## Status
 
-Accepted — 2026-07-14.
+Superseded by [ADR-0006](0006-public-repo-anonymous-https.md) — 2026-07-21.
+(Accepted 2026-07-14.) The repo was made public and moved to
+`katomatik-com/katomatik-infra`; ArgoCD now reads it anonymously over HTTPS, so
+this deploy-key credential no longer applies. The mechanism below remains the
+reference for the private repos introduced in later phases.
 
 ## Context
 

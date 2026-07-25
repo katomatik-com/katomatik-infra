@@ -36,3 +36,7 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0006](0006-public-repo-anonymous-https.md) | Public repo — ArgoCD reads it anonymously over HTTPS | Accepted |
 | [0007](0007-dedicated-katomatik-cloudflare-hcp-accounts.md) | Dedicated katomatik Cloudflare + HCP accounts; Terraform owns the zone | Accepted |
 | [0008](0008-app-delivery-plain-manifests-and-apex-routing.md) | App delivery — plain manifests per app, apex + www routing | Accepted |
+| [0009](0009-self-hosted-keycloak-idp.md) | Self-hosted Keycloak as the homelab identity provider | Accepted |
+| [0010](0010-native-oidc-oauth2-proxy-fallback.md) | Workload auth via native OIDC; oauth2-proxy as the fallback | Accepted |
+| [0011](0011-neon-managed-postgres.md) | Managed external Postgres (Neon) for stateful app data | Accepted |
+| [0012](0012-argocd-sops-decryption-ksops.md) | ArgoCD decrypts SOPS secrets via KSOPS | Accepted |

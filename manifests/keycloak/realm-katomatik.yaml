@@ -1,0 +1,15 @@
+# The `katomatik` realm — the identity domain for katomatik's apps and users,
+# declared as a KeycloakRealmImport CR (GitOps; ADR-0014). ONE realm for now
+# (single admin + small user base — ADR-0008's "no premature machinery"); split
+# out a separate internal realm later only if a distinct security domain appears.
+# Self-registration is off (Keycloak default). Clients (ArgoCD, the Spring app)
+# are added separately as KeycloakOIDCClient CRs.
+apiVersion: k8s.keycloak.org/v2beta1
+kind: KeycloakRealmImport
+metadata:
+  name: katomatik
+spec:
+  keycloakCRName: keycloak
+  realm:
+    realm: katomatik
+    enabled: true

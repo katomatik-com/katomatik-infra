@@ -1,5 +1,18 @@
 # Which files SOPS encrypts, and to which age recipient(s).
-# The value below is a PUBLIC key — safe to commit.
+# The values below are PUBLIC keys — safe to commit.
+# Rules are evaluated top-to-bottom; the FIRST match wins, so the specific
+# Kubernetes rule must come before the general one.
 creation_rules:
+  # Kubernetes Secret manifests (under manifests/), decrypted in-cluster by
+  # ArgoCD via KSOPS (ADR-0012). Encrypt ONLY the secret data so kind/metadata
+  # stay readable for kustomize/ArgoCD. Recipients: the dedicated CLUSTER key
+  # AND the master key (multi-recipient break-glass — the Mac can still decrypt).
+  - path_regex: manifests/.*\.sops\.ya?ml$
+    encrypted_regex: ^(data|stringData)$
+    age: "age1mj9llmgzyevm6glaj8pdcc907t2kqnz4vl9juwtk3y5x59yeucvsvrrzxs,age1365my9m5sjp4gghlu40g8z5j8wx0r5pzd6a6gxfn69rex3mgy5lq3q80up"
+
+  # Everything else (e.g. Ansible host secrets under ansible/): all values
+  # encrypted, master key only — the cluster never needs these.
   - path_regex: .*\.sops\.ya?ml$
     age: age1mj9llmgzyevm6glaj8pdcc907t2kqnz4vl9juwtk3y5x59yeucvsvrrzxs
+

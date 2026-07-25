@@ -1,0 +1,23 @@
+# Throwaway KSOPS smoke test — proves ArgoCD decrypts a SOPS-encrypted Secret via
+# KSOPS at render time (ADR-0012). DELETE once verified: remove this file and
+# manifests/ksops-test/, then commit. Not a permanent workload.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ksops-test
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/katomatik-com/katomatik-infra.git
+    targetRevision: main
+    path: manifests/ksops-test        # kustomization + ksops generator
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ksops-test
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

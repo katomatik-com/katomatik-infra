@@ -1,0 +1,24 @@
+# Application: Keycloak — the homelab IDP (ADR-0009), deployed via the official
+# Keycloak Operator (ADR-0014). This app currently ships just the DB connection
+# Secret (KSOPS-decrypted, ADR-0012); the `Keycloak` CR and realm import get added
+# to the same kustomization in the following steps.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keycloak
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/katomatik-com/katomatik-infra.git
+    targetRevision: main
+    path: manifests/keycloak
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keycloak          # same namespace the operator watches
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

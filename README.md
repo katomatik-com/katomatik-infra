@@ -55,6 +55,7 @@ Two kinds, kept deliberately separate:
   - [Ansible bootstrap](docs/guides/ansible-bootstrap.md) — two fresh machines → "Ansible can manage my server"
   - [Helm basics](docs/guides/helm-basics.md)
   - [SOPS + age setup](docs/guides/sops-age-setup.md)
+  - [ArgoCD secret decryption](docs/guides/argocd-secret-decryption.md) — how encrypted Git becomes plaintext Secrets (KSOPS, CMP, KMS vs Vault)
   - [Cloudflare Tunnel](docs/guides/cloudflare-tunnel-setup.md)
   - [Terraform — Cloudflare](docs/guides/terraform-cloudflare.md)
   - [Adding an app](docs/guides/add-an-app.md) — deploy a workload and serve it at a public hostname

@@ -1,0 +1,13 @@
+# The `homelab` realm — declared as a KeycloakRealmImport CR (GitOps, not
+# click-ops; ADR-0014). The operator runs an import Job to create/reconcile it in
+# the Keycloak instance (keycloakCRName → our Keycloak CR). Clients (ArgoCD, the
+# Spring app) are added separately as KeycloakOIDCClient CRs in later phases.
+apiVersion: k8s.keycloak.org/v2beta1
+kind: KeycloakRealmImport
+metadata:
+  name: homelab
+spec:
+  keycloakCRName: keycloak
+  realm:
+    realm: homelab
+    enabled: true

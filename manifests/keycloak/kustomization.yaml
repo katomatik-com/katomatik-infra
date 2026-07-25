@@ -5,5 +5,6 @@ kind: Kustomization
 resources:
   - keycloak.yaml
   - ingress.yaml
+  - realm-homelab.yaml
 generators:
   - ./ksops-generator.yaml

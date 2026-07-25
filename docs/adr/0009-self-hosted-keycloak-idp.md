@@ -4,6 +4,12 @@
 
 Accepted — 2026-07-24.
 
+> **Update (2026-07-24):** the *deployment mechanism* described below (the bitnami
+> Helm chart) is **superseded by [ADR-0014](0014-keycloak-operator.md)** — Keycloak
+> is now deployed via the official Keycloak Operator, because Bitnami discontinued
+> its free images/charts in 2025. The core decision of *this* ADR — self-hosted
+> Keycloak as the IDP for admin surfaces and app login — **stands unchanged.**
+
 ## Context
 
 The next layer of the lab is securing applications: giving a public-facing app

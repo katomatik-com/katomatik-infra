@@ -40,3 +40,4 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0010](0010-native-oidc-oauth2-proxy-fallback.md) | Workload auth via native OIDC; oauth2-proxy as the fallback | Accepted |
 | [0011](0011-neon-managed-postgres.md) | Managed external Postgres (Neon) for stateful app data | Accepted |
 | [0012](0012-argocd-sops-decryption-ksops.md) | ArgoCD decrypts SOPS secrets via KSOPS | Accepted |
+| [0014](0014-keycloak-operator.md) | Deploy Keycloak via the official Keycloak Operator | Accepted (revises 0009 deployment) |

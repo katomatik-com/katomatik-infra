@@ -24,3 +24,8 @@ variable "hostnames" {
   type        = list(string)
   default     = ["argocd"]
 }
+
+variable "neon_organization_id" {
+  description = "Neon Organization ID (Organization -> settings -> General Info)."
+  type        = string
+}

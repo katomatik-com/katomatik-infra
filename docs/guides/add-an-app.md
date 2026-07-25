@@ -148,7 +148,7 @@ The hostname has to resolve to the tunnel. That's a proxied CNAME to
 
 - **The apex** — DNS forbids a real CNAME at a zone apex, so it can't ride the
   subdomain `for_each`. It has its own resource
-  (`cloudflare_dns_record.apex` in `terraform/main.tf`) using Cloudflare's
+  (`cloudflare_dns_record.apex` in `terraform/cloudflare.tf`) using Cloudflare's
   **CNAME flattening**, which is set up once and needs no change for future
   apps.
 

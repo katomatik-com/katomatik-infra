@@ -18,6 +18,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5.0"
     }
+    neon = { # not official provider, but it's mentioned at https://neon.com/docs/reference/terraform
+      source  = "kislerdm/neon"
+      version = "~> 0.14.0"
+    }
     random = {
       source  = "hashicorp/random"
       version = "~> 3.6"
@@ -28,3 +32,7 @@ terraform {
 # The Cloudflare provider reads the API token from the CLOUDFLARE_API_TOKEN
 # environment variable (the sensitive HCP workspace variable) — nothing here.
 provider "cloudflare" {}
+
+# the Neon provider reads the API token from the NEON_API_KEY environment 
+# variable (the sensitive HCP workspace variable) — nothing here).
+provider "neon" {}

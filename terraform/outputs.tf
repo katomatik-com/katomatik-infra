@@ -26,3 +26,26 @@ output "tunnel_credentials_json" {
   })
   sensitive = true
 }
+
+
+# Neon (Keycloak project). The connection URI is the DIRECT endpoint (not the
+# pooler) — Keycloak runs Liquibase migrations + its own Agroal pool, which the
+# transaction-mode pooler would break. Retrieve for the SOPS-encrypted DB secret:
+#   terraform output -raw keycloak_db_connection_uri
+output "keycloak_project_id" {
+  description = "Neon project ID for Keycloak."
+  value       = neon_project.keycloak.id
+}
+output "keycloak_db_connection_uri" {
+  description = "Direct connection URI for the Keycloak database (contains credentials)."
+  value       = neon_project.keycloak.connection_uri
+  sensitive   = true
+}
+output "keycloak_db_default_branch_id" {
+  description = "Default branch ID of the Keycloak Neon project."
+  value       = neon_project.keycloak.default_branch_id
+}
+output "keycloak_db_user" {
+  description = "Database role Keycloak connects as."
+  value       = neon_project.keycloak.database_user
+}

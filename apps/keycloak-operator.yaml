@@ -1,0 +1,31 @@
+# Application: the official Keycloak Operator (ADR-0014).
+#
+# Like apps/argocd.yaml (a remote Helm chart), this points at a THIRD-PARTY
+# upstream source rather than manifests in our repo — here the operator's official
+# kustomize base, pinned to a release tag. The `kubernetes` overlay is the
+# namespace-scoped install: it lays down the CRDs (Keycloak, KeycloakRealmImport)
+# and the operator Deployment/RBAC, and the operator watches its OWN namespace
+# (keycloak) — so the Keycloak CR we add next must live in this namespace too.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keycloak-operator
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/keycloak/keycloak-k8s-resources
+    targetRevision: "26.7.0"     # pinned, same discipline as k3s/ArgoCD/Neon
+    path: kubernetes             # namespace-scoped operator + CRDs (has a kustomization.yaml)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keycloak
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
+      # Keycloak CRDs are large — server-side apply avoids the client-side
+      # last-applied-annotation size limit (metadata too long) errors.
+      - ServerSideApply=true

@@ -9,22 +9,50 @@
 # Kept intentionally minimal — add config here as needs arise, committed to Git.
 
 global:
-  # ArgoCD's external URL AND the Ingress hostname. Reached through the
-  # Cloudflare Tunnel → Traefik (docs/cloudflare-tunnel-setup.md).
   domain: argocd.katomatik.com
 
 configs:
   params:
-    # Run argocd-server WITHOUT its own TLS. We terminate TLS upstream (Traefik
-    # / Cloudflare Tunnel — ADR-0002), so a second TLS layer here is redundant,
-    # and it makes `kubectl port-forward` access over plain http painless during
-    # bootstrap. Do NOT use this if argocd-server is ever exposed raw to a
-    # network without an upstream terminating TLS.
+    # Run argocd-server WITHOUT its own TLS (Traefik/Cloudflare terminate it).
     server.insecure: true
+  cm:
+    # KSOPS: let kustomize run the ksops exec plugin (ADR-0012).
+    kustomize.buildOptions: "--enable-alpha-plugins --enable-exec"
 
 server:
   ingress:
-    # Traefik Ingress for the UI, using the hostname from global.domain above.
-    # Cloudflare terminates public TLS, so no cert/tls block here.
     enabled: true
     ingressClassName: traefik
+
+# KSOPS in the repo-server (ADR-0012, docs/guides/argocd-secret-decryption.md):
+# an init container installs ksops + kustomize into a shared volume that overrides
+# the built-in kustomize; the cluster age key (the sops-age Secret) is mounted so
+# sops can decrypt SOPS'd manifests at render time.
+repoServer:
+  volumes:
+    - name: custom-tools
+      emptyDir: {}
+    - name: sops-age
+      secret:
+        secretName: sops-age
+  initContainers:
+    - name: install-ksops
+      image: viaductoss/ksops:v4.5.1
+      command: ["/usr/local/bin/ksops", "install", "--with-kustomize", "/custom-tools"]
+      volumeMounts:
+        - mountPath: /custom-tools
+          name: custom-tools
+  volumeMounts:
+    - mountPath: /usr/local/bin/kustomize
+      name: custom-tools
+      subPath: kustomize
+    - mountPath: /usr/local/bin/ksops
+      name: custom-tools
+      subPath: ksops
+    - mountPath: /.config/sops/age
+      name: sops-age
+  env:
+    - name: SOPS_AGE_KEY_FILE
+      value: /.config/sops/age/keys.txt
+    - name: XDG_CONFIG_HOME
+      value: /.config

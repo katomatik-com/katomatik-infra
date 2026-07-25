@@ -1,0 +1,38 @@
+# Public entrypoint for auth.katomatik.com → Keycloak.
+#
+# Same path as katomatik-web: Cloudflare (TLS + proxy) → tunnel → cloudflared →
+# Traefik on :80 (the tunnel's single catch-all, ADR-0002). cloudflared preserves
+# the Host header, so Traefik sees `auth.katomatik.com` and this rule selects
+# Keycloak. No TLS block — Cloudflare terminates HTTPS at the edge (Keycloak runs
+# plain HTTP, per the CR's http.httpEnabled + proxy.headers).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: auth.katomatik.com
+      http:
+        # Expose ONLY Keycloak's public surface. All OIDC/auth traffic is under
+        # /realms and /resources; the admin console (/admin) is deliberately NOT
+        # routed, so it's unreachable from the internet (Traefik 404s it). Admin
+        # is reached via `kubectl port-forward` for now; exposing the admin UI
+        # with an access gate is a later hardening step. See ADR-0009/0014.
+        paths:
+          - path: /realms
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak-service   # created by the operator
+                port:
+                  number: 8080           # the http Service port
+          - path: /resources
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak-service
+                port:
+                  number: 8080

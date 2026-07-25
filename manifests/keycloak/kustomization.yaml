@@ -4,5 +4,6 @@ kind: Kustomization
 # references. Realm import will be added here next.
 resources:
   - keycloak.yaml
+  - ingress.yaml
 generators:
   - ./ksops-generator.yaml

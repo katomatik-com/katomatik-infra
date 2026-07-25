@@ -45,6 +45,10 @@ crash.log
 *.auto.tfvars
 secret*.tfvars
 
+# === Local scratch / planning ===
+# Working notes and status trackers — visible in the tree, never committed.
+.plan/
+
 # === Editor / OS cruft ===
 .DS_Store
 *.swp

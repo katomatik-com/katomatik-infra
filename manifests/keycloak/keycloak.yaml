@@ -1,0 +1,39 @@
+# The Keycloak instance (ADR-0009/0014). The Operator turns this CR into a
+# StatefulSet + Service (keycloak-service:8080). Runs behind Cloudflare Tunnel →
+# Traefik, which terminate TLS — so Keycloak speaks plain HTTP internally and
+# trusts the proxy's X-Forwarded-* headers (mirrors ArgoCD's server.insecure).
+apiVersion: k8s.keycloak.org/v2beta1
+kind: Keycloak
+metadata:
+  name: keycloak
+spec:
+  instances: 1
+
+  db:
+    vendor: postgres
+    # host + database are plain (not credentials); sslmode=require because Neon
+    # mandates TLS and the operator's default URL would omit it. Credentials come
+    # from the KSOPS-decrypted keycloak-db Secret, NOT the URL.
+    url: jdbc:postgresql://ep-royal-cloud-agqwj7c2.c-2.eu-central-1.aws.neon.tech/keycloak_db?sslmode=require
+    usernameSecret:
+      name: keycloak-db
+      key: username
+    passwordSecret:
+      name: keycloak-db
+      key: password
+    poolMaxSize: 15        # cap connections for the small free-tier Neon compute
+
+  # Public URL Keycloak uses for issuer/redirect URLs. External scheme is HTTPS
+  # (terminated upstream); proxy headers let Keycloak trust that.
+  hostname:
+    hostname: https://auth.katomatik.com
+  proxy:
+    headers: xforwarded
+
+  # TLS terminated upstream (Cloudflare/Traefik) → serve plain HTTP internally.
+  http:
+    httpEnabled: true
+
+  # We route via our own Traefik Ingress (ADR-0002/0008), not the operator's default.
+  ingress:
+    enabled: false

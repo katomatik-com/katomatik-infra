@@ -27,9 +27,13 @@ Public infrastructure for **katomatik.com** (ArgoCD runs at `argocd.katomatik.co
 | Ingress | Traefik | bundled with k3s |
 | Tunnel | Cloudflare Tunnel | `cloudflared` host daemon → Traefik — [ADR-0002](docs/adr/0002-cloudflare-tunnel-host-daemon-to-traefik.md) |
 | External / IaC | Terraform | Cloudflare zone/tunnel/DNS, state in HCP — [ADR-0005](docs/adr/0005-terraform-for-cloudflare-external-layer.md) / [0007](docs/adr/0007-dedicated-katomatik-cloudflare-hcp-accounts.md) |
+| Identity | Keycloak | self-hosted IDP at `auth.katomatik.com`; Operator-managed instance, config in Terraform — [ADR-0009](docs/adr/0009-self-hosted-keycloak-idp.md) / [0014](docs/adr/0014-keycloak-operator.md) / [0015](docs/adr/0015-keycloak-config-via-terraform.md) |
+| Database | Neon (managed Postgres) | external, one project per app — [ADR-0011](docs/adr/0011-neon-managed-postgres.md) |
 
-*Planned:* Prometheus + Grafana (observability), Keycloak + PostgreSQL (auth),
-and my own web apps.
+ArgoCD's UI is gated by Keycloak SSO (OIDC + PKCE); admin comes from the
+`argocd-admins` group, and Keycloak's own admin console is not exposed publicly.
+
+*Planned:* Prometheus + Grafana (observability), and my own web apps.
 
 ## Repo layout
 
@@ -40,6 +44,8 @@ and my own web apps.
 ├── apps/             # ArgoCD Application manifests (one per app)
 ├── manifests/        # plain Kubernetes YAML per app (referenced by apps/)
 ├── terraform/        # Cloudflare zone/tunnel/DNS (state in HCP)
+│   └── keycloak/     # Keycloak realm/client config — SEPARATE workspace, local state
+│                     #   (HCP runners can't reach the in-cluster admin API)
 ├── docs/
 │   ├── guides/       # how-to guides (per phase)
 │   └── adr/          # Architectural Decision Records — the "why"
@@ -58,6 +64,7 @@ Two kinds, kept deliberately separate:
   - [ArgoCD secret decryption](docs/guides/argocd-secret-decryption.md) — how encrypted Git becomes plaintext Secrets (KSOPS, CMP, KMS vs Vault)
   - [Cloudflare Tunnel](docs/guides/cloudflare-tunnel-setup.md)
   - [Terraform — Cloudflare](docs/guides/terraform-cloudflare.md)
+  - [Keycloak + OIDC SSO](docs/guides/keycloak-oidc-sso.md) — self-hosted IDP, and putting ArgoCD behind it
   - [Adding an app](docs/guides/add-an-app.md) — deploy a workload and serve it at a public hostname
 - **Decisions** (`docs/adr/`) — *why* each choice was made, and what was rejected.
   Start at the [ADR index](docs/adr/README.md).

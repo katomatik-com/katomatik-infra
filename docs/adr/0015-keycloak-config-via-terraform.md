@@ -7,6 +7,16 @@ Accepted — 2026-07-26. Revises the realm/client **configuration** approach of
 `KeycloakOIDCClient` CRs). The Keycloak *instance* decision in ADR-0014 stands;
 only *config management* changes here.
 
+> **Implemented — 2026-07-26.** Provider `keycloak/keycloak` pinned `~> 5.8`. The
+> existing `katomatik` realm was **adopted via a config-driven `import` block**, not
+> recreated, so it kept its internal ID and any users; the `KeycloakRealmImport` CR was
+> then dropped, and pruning it did **not** delete the realm (confirming the Operator
+> never deletes realms). Runs go through `terraform/keycloak/tf.sh`, which manages the
+> port-forward and credential injection. One consequence found in practice: `terraform/`
+> is an HCP CLI-driven workspace and uploads its whole working directory, so
+> `terraform/.terraformignore` excludes `keycloak/` — whose *local* state file contains
+> secrets. Walkthrough: [keycloak-oidc-sso.md](../guides/keycloak-oidc-sso.md).
+
 ## Context
 
 The Keycloak **instance** is Operator-managed ([ADR-0014](0014-keycloak-operator.md)).

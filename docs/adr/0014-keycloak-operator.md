@@ -6,6 +6,12 @@ Accepted — 2026-07-24. Revises the deployment mechanism of
 [ADR-0009](0009-self-hosted-keycloak-idp.md) (which chose the bitnami Helm chart);
 that ADR's IDP decision otherwise stands.
 
+> **Update (2026-07-26):** the realm/client **configuration** approach below
+> (`KeycloakRealmImport` / `KeycloakOIDCClient` CRs) is superseded by
+> [ADR-0015](0015-keycloak-config-via-terraform.md) — realm-import is create-only, so
+> config moves to the Terraform Keycloak provider. The operator's role narrows to the
+> **instance**; the rest of this ADR stands.
+
 ## Context
 
 [ADR-0009](0009-self-hosted-keycloak-idp.md) chose self-hosted Keycloak, to be

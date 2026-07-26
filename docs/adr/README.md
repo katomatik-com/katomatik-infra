@@ -41,3 +41,4 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0011](0011-neon-managed-postgres.md) | Managed external Postgres (Neon) for stateful app data | Accepted |
 | [0012](0012-argocd-sops-decryption-ksops.md) | ArgoCD decrypts SOPS secrets via KSOPS | Accepted |
 | [0014](0014-keycloak-operator.md) | Deploy Keycloak via the official Keycloak Operator | Accepted (revises 0009 deployment) |
+| [0015](0015-keycloak-config-via-terraform.md) | Manage Keycloak realm/client config with Terraform | Accepted (revises 0014 config) |

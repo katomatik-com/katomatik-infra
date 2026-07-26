@@ -1,10 +1,16 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# The Keycloak instance (CR) plus the KSOPS-decrypted keycloak-db Secret it
-# references. Realm import will be added here next.
+# The Keycloak instance (CR), its public Ingress, and the KSOPS-decrypted
+# keycloak-db Secret it references.
+#
+# NOTE: realm/client configuration is deliberately NOT here. The
+# `KeycloakRealmImport` CR that used to live in this kustomization was retired
+# (ADR-0015): it is create-only, so it could never add a client to the existing
+# `katomatik` realm. That config now lives in terraform/keycloak/, which owns
+# the realm (imported into its state, not recreated). This directory owns the
+# Keycloak *instance* only.
 resources:
   - keycloak.yaml
   - ingress.yaml
-  - realm-katomatik.yaml
 generators:
   - ./ksops-generator.yaml

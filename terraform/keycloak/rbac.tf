@@ -58,7 +58,15 @@ resource "keycloak_user" "admin" {
     # Declaring `required_actions = ["UPDATE_PASSWORD"]` instead would be worse:
     # after a legitimate password change Terraform would keep re-adding it,
     # forcing another change on every single apply.
-    ignore_changes = [required_actions]
+    #
+    # `first_name` / `last_name` are the same category: PROFILE data owned by
+    # whoever holds the account and editable in Keycloak's account console. They
+    # were set by hand at first login, and — being optional-but-not-computed —
+    # the next plan wanted to null both back out. Ignoring them keeps Terraform
+    # from reverting the account console. (If this account's display name ever
+    # needs to be authoritative in code, declare the fields instead and accept
+    # that Terraform will win over the console.)
+    ignore_changes = [required_actions, first_name, last_name]
   }
 }
 

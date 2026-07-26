@@ -106,12 +106,21 @@ successful apply** — the migration is finished and the block is then noise.
   `/argocd-admins` and every ArgoCD RBAC rule stops matching.
 - **Realms are protected.** `terraform_deletion_protection = true` on the realm
   blocks a destroy that would take all users with it.
+- **Optional-but-NOT-computed attributes get CLEARED if you don't declare them.**
+  The recurring hazard with this provider — four occurrences so far, including one
+  that would have cancelled a forced password change, and one where adding
+  `security_defenses.brute_force_detection` would have wiped all eight live
+  security headers because the sibling `headers` sub-block wasn't declared.
+  Server defaults → pin them. State the server or a user mutates
+  (`required_actions`, `first_name`/`last_name`) → `ignore_changes`. Declare a
+  parent block → declare all its siblings too.
+- **Read the attribute-level diff on every plan**, not just the `Plan: N to…`
+  counts — that is the only place these show up. Then require `No changes.`
 
 ## Follow-up hardening (not done yet)
 
 - **Dedicated Terraform service account** instead of the bootstrap
   `keycloak-initial-admin` superuser: a confidential client with
   `service_accounts_enabled` and only the `realm-management` roles needed.
-- **Brute-force detection** (`security_defenses`) and **SMTP**, which in turn
-  unlocks `verify_email` / `reset_password_allowed`.
+- **SMTP**, which in turn unlocks `verify_email` / `reset_password_allowed`.
 - **Remote state** if this ever stops being a single-operator laptop workflow.

@@ -201,6 +201,52 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 Step 4 is the useful one: it exercises the client, the scopes, the redirect URI and the
 PKCE method in a single request, before a human ever types a password.
 
+## Brute-force protection
+
+**Keycloak ships this switched OFF.** On an internet-facing login page that is not
+defensible on its own, and here three facts compounded: the login page is public, the
+admin **username is public** (it's in the committed `terraform.tfvars` of a public repo),
+and that admin is a **shared** credential. Individually fine; together they make password
+guessing cheap. It lives in `security_defenses.brute_force_detection` on the realm.
+
+Two things about the configuration are worth understanding rather than copying.
+
+**`permanent_lockout = false`, deliberately.** Permanent lockout sounds stronger and is the
+wrong choice here: with a shared admin account whose username is publicly known, anyone
+could deliberately lock it and nobody could get into Keycloak at all. That trades a
+guessing risk for a guaranteed **denial-of-service** — and ArgoCD's local `admin` is
+break-glass for *ArgoCD*, not for Keycloak. `max_temporary_lockouts = 0` matters for the
+same reason: it stops Keycloak escalating to a permanent lock after N temporary ones.
+Temporary lockout with `MULTIPLE` (exponential) backoff makes guessing expensive while a
+human who fat-fingered a password waits a minute.
+
+**The quick-login check does most of the work.** `max_login_failures = 10` is not the whole
+story. `quick_login_check_milli_seconds = 1000` treats two failures arriving closer together
+than a second as machine-speed and applies `minimum_quick_login_wait_seconds` immediately.
+Verified against a throwaway account: a scripted 12-attempt burst was locked out after just
+**2 counted failures** — the timing detector fired long before the failure counter got near
+10. So the failure count governs slow, human-paced guessing; the timing check governs
+scripts.
+
+Verify it on a disposable user — never the admin — and read Keycloak's own view:
+
+```sh
+curl -s -H "Authorization: Bearer $T" \
+  "$R/attack-detection/brute-force/users/<user-id>"
+# → {"numFailures":2,"disabled":true,"numTemporaryLockouts":0,...}
+# Clear it again with: DELETE $R/attack-detection/brute-force/users
+```
+
+`disabled: true` plus the *correct* password being rejected is the proof. Clean up the
+throwaway user afterwards, since Terraform doesn't manage it.
+
+> **The trap in this change.** `security_defenses` contains **two sibling sub-blocks** —
+> `brute_force_detection` **and** `headers`. Declaring the parent while omitting `headers`
+> makes Terraform read those as empty and **clear all eight live security headers** (CSP,
+> HSTS, X-Frame-Options …) as a side effect of adding brute-force protection. Read the live
+> `browserSecurityHeaders` from the admin API first and pin them in a `headers` block. Same
+> footgun as below, one level deeper.
+
 ## Logging out, and why you get straight back in
 
 **Expected behaviour, not a bug:** after logging out of ArgoCD, clicking "Log in via
@@ -230,17 +276,29 @@ a browser may be shared, since otherwise "log out" does not really log out.
 ## Traps worth knowing
 
 - **Terraform attributes that are optional but NOT computed get cleared if you don't
-  declare them.** Hit twice here. `keycloak_realm.default_signature_algorithm` planned
-  `RS256 -> None` (fixed by pinning the live value). `keycloak_user.required_actions`
-  planned to strip `UPDATE_PASSWORD` — which would have cancelled the forced password
-  change and promoted a throwaway generated password into a permanent credential (fixed
-  with `lifecycle { ignore_changes = [required_actions] }`, *not* by declaring it, since
-  Keycloak clears that action once the password is changed and Terraform would re-add it
-  forever). Rule of thumb: server defaults → pin them; runtime state the server or user
-  mutates → `ignore_changes`.
-- **Always read the attribute-level diff after an import**, never just
-  `Plan: N to add, N to change`. Both bugs above were invisible in the counts. Require a
-  literal `No changes.` afterwards.
+  declare them.** This is *the* recurring hazard with this provider — it has bitten **four
+  times** so far, in three different shapes:
+  1. **A server default**: `keycloak_realm.default_signature_algorithm` planned
+     `RS256 -> None`. Fix — pin the live value in config.
+  2. **Runtime credential state**: `keycloak_user.required_actions` planned to strip
+     `UPDATE_PASSWORD`, which would have cancelled the forced password change and promoted
+     a throwaway generated password into a permanent credential. Fix —
+     `lifecycle { ignore_changes = [...] }`, *not* declaring the value, since Keycloak
+     clears that action once the password is changed and Terraform would re-add it forever.
+  3. **User-owned profile data**: `keycloak_user.first_name` / `last_name`, set by hand at
+     first login, planned back to `None` — Terraform reverting the account console. Fix —
+     `ignore_changes` again.
+  4. **A sibling sub-block**: adding `security_defenses.brute_force_detection` while
+     omitting the `headers` sub-block would have cleared all eight live security headers.
+     Fix — read them from the admin API and pin them.
+
+  Rule of thumb: **server defaults → pin them; state the server or a user mutates →
+  `ignore_changes`; and when you declare a parent block, declare *all* of its siblings.**
+- **Always read the attribute-level diff**, after an import *and* after every subsequent
+  change — never just `Plan: N to add, N to change`. Every bug above was invisible in the
+  counts; one of them only surfaced because an unrelated change forced a plan. Require a
+  literal `No changes.` afterwards. A `terraform show -json <planfile>` piped through a
+  script that flags any `value -> null` transition is worth the twenty lines.
 - **`keycloak_openid_client_default_scopes` is authoritative** — it *replaces* the list.
   The six built-ins (`acr basic email profile roles web-origins`) must be listed
   alongside `groups`, or they are silently detached.
@@ -257,7 +315,7 @@ a browser may be shared, since otherwise "log out" does not really log out.
   credential: audit events can't attribute actions to a person, access can't be revoked
   for one person, and MFA protects an account rather than an individual. The upgrade path
   is named users added to the same `argocd-admins` group — no ArgoCD-side change needed.
-- **Brute-force detection and SMTP** on the realm, which in turn unlock `verify_email`
-  and `reset_password_allowed`.
+- **SMTP** on the realm, which in turn unlocks `verify_email` and
+  `reset_password_allowed`.
 - **An access gate in front of the admin console**, so it can be reachable but protected
   by a Keycloak admin group (Keycloak guarding its own console).

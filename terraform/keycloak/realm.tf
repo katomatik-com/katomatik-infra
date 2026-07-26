@@ -52,6 +52,70 @@ resource "keycloak_realm" "katomatik" {
   # takes every user in the realm with it. Set to false only when you genuinely
   # mean to tear the realm down.
   terraform_deletion_protection = true
+
+  # --- Attack surface ---------------------------------------------------------
+  security_defenses {
+    # Rate-limit password guessing. Keycloak ships this switched OFF, which is
+    # indefensible here: the login page is on the public internet AND the admin
+    # username is publicly known (it sits in the committed terraform.tfvars of a
+    # public repo). Without this, guessing is free and unlimited.
+    brute_force_detection {
+      # Failures before the account is temporarily locked. Tightened from
+      # Keycloak's default of 30 — this realm has a handful of accounts, so
+      # there is no legitimate reason to reach double digits.
+      max_login_failures = 10
+
+      # TEMPORARY lockout only — deliberately NOT permanent.
+      #
+      # Permanent lockout sounds stronger and is the wrong choice here: the
+      # admin account is a SHARED credential with a PUBLIC username, so anyone
+      # could deliberately lock it and nobody could get into Keycloak at all.
+      # That trades a guessing risk for a guaranteed denial-of-service, and
+      # ArgoCD's local `admin` is break-glass for ArgoCD — NOT for Keycloak.
+      # `max_temporary_lockouts = 0` also disables escalation-to-permanent after
+      # N temporary lockouts, which would reintroduce the same hazard.
+      permanent_lockout      = false
+      max_temporary_lockouts = 0
+
+      # Backoff. MULTIPLE grows the wait with each failure (vs LINEAR's fixed
+      # step), so a slow-and-patient attacker pays exponentially while a human
+      # who fat-fingered their password waits a minute.
+      brute_force_strategy     = "MULTIPLE"
+      wait_increment_seconds   = 60  # first lockout, then it grows
+      max_failure_wait_seconds = 900 # cap at 15 min, so a real user recovers
+
+      # Detects credential-stuffing scripts: two attempts closer together than
+      # quick_login_check are treated as machine-speed and get their own
+      # minimum wait, independent of the failure count.
+      quick_login_check_milli_seconds  = 1000
+      minimum_quick_login_wait_seconds = 60
+
+      # Forget the failure count after 12h of good behaviour, so a lockout can
+      # never become effectively permanent through accumulated old failures.
+      failure_reset_time_seconds = 43200
+    }
+
+    # These are PINNED TO THE VALUES KEYCLOAK IS ALREADY SERVING, read off the
+    # live realm before this block was written — they are not new policy.
+    #
+    # Why they must be here at all: `headers` is a sibling sub-block of
+    # brute_force_detection inside security_defenses, and these attributes are
+    # optional-but-not-computed. Declaring the parent block while omitting
+    # `headers` makes Terraform read them as empty and CLEAR every one of them —
+    # so adding brute-force protection would have silently stripped the realm's
+    # CSP, HSTS and clickjacking defences. Same footgun that tried to null
+    # default_signature_algorithm and required_actions.
+    headers {
+      content_security_policy             = "frame-src 'self'; frame-ancestors 'self'; object-src 'none';"
+      content_security_policy_report_only = ""
+      referrer_policy                     = "no-referrer"
+      strict_transport_security           = "max-age=31536000; includeSubDomains"
+      x_content_type_options              = "nosniff"
+      x_frame_options                     = "SAMEORIGIN"
+      x_robots_tag                        = "none"
+      x_xss_protection                    = "1; mode=block"
+    }
+  }
 }
 
 # --- The `groups` client scope ------------------------------------------------

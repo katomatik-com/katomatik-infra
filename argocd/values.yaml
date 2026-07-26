@@ -19,6 +19,55 @@ configs:
     # KSOPS: let kustomize run the ksops exec plugin (ADR-0012).
     kustomize.buildOptions: "--enable-alpha-plugins --enable-exec"
 
+    # Keep the built-in local `admin` account as BREAK-GLASS access. Deliberate:
+    # if Keycloak is down, its DB (Neon) is unreachable, or the OIDC config below
+    # is wrong, this is the only way back into ArgoCD — and ArgoCD is what would
+    # have to fix it. Disabling it is a hardening step for AFTER SSO has proven
+    # itself, not before.
+    admin.enabled: "true"
+
+    # --- SSO via Keycloak (Phase 1) -----------------------------------------
+    # The Keycloak side of this — realm, client, groups scope — is Terraform's,
+    # in terraform/keycloak/ (ADR-0015). Every value here must match what
+    # `./tf.sh output` reports over there.
+    #
+    # No clientSecret, on purpose: `argocd` is a PUBLIC client using PKCE.
+    # ArgoCD performs the code→token exchange in the BROWSER, so a secret would
+    # have to be shipped to the browser to be used, which makes it not a secret.
+    # PKCE replaces it with a per-request proof — nothing to store or rotate.
+    #
+    # `issuer` must be the PUBLIC URL and match Keycloak's `iss` claim exactly;
+    # ArgoCD rejects the login otherwise. It is not merely an address.
+    #
+    # ArgoCD derives its redirect URI from `url` (already set to
+    # https://argocd.katomatik.com by global.domain) — that is what has to be
+    # registered on the Keycloak client, and is.
+    oidc.config: |
+      name: Keycloak
+      issuer: https://auth.katomatik.com/realms/katomatik
+      clientID: argocd
+      enablePKCEAuthentication: true
+      requestedScopes:
+        - openid
+        - profile
+        - email
+        - groups
+
+  # --- RBAC ------------------------------------------------------------------
+  # Keycloak asserts MEMBERSHIP, ArgoCD grants PERMISSIONS. The group name below
+  # must match the Keycloak group exactly, and the `groups` claim must arrive
+  # unprefixed — the Terraform mapper sets full_path=false for precisely this
+  # reason (a leading "/" would make every rule here silently stop matching).
+  #
+  # Note what is NOT set: `policy.default`. It stays empty, so ArgoCD denies by
+  # default and a successful Keycloak login on its own grants NOTHING. Setting
+  # it to role:readonly would hand every account in the realm — including future
+  # app users who have no business here — read access to the whole cluster's
+  # manifests. Access comes only from argocd-admins membership.
+  rbac:
+    policy.csv: |
+      g, argocd-admins, role:admin
+
 server:
   ingress:
     enabled: true

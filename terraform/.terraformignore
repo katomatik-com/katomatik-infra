@@ -1,0 +1,13 @@
+# Files in THIS directory that must not be uploaded to HCP Terraform.
+#
+# Background: this workspace uses HCP for remote execution, and CLI-driven runs
+# package up the working directory — including subdirectories — and ship it to
+# HCP as a configuration version.
+#
+# `keycloak/` is a SEPARATE, LOCALLY-executed root module (ADR-0015). Terraform
+# never evaluates it as part of this root module (it is not referenced as a
+# module), so uploading it would change nothing — but it holds a LOCAL
+# terraform.tfstate containing secrets, and there is no reason to hand that to a
+# remote service. Excluded explicitly rather than trusting the default ignore
+# rules, which are not clearly documented on this point.
+keycloak/

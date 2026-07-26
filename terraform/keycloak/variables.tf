@@ -1,6 +1,6 @@
 # Non-secret inputs. Secrets come from the environment, never from Git:
 #   KEYCLOAK_USER / KEYCLOAK_PASSWORD  → admin API auth (provider, versions.tf)
-#   TF_VAR_test_admin_password         → the test user's initial password
+#   TF_VAR_admin_initial_password      → the admin account's initial password
 # See README.md for the exact export lines.
 
 variable "keycloak_url" {
@@ -46,24 +46,27 @@ variable "argocd_cli_sso_port" {
   default     = 8085
 }
 
-variable "test_admin_username" {
-  description = "Username of the Phase 1 test admin (member of argocd-admins)."
+// Deliberately NO defaults on the two below: they decide who holds admin on
+// ArgoCD. A default would let a run quietly grant that to whoever the default
+// names. Values live in terraform.tfvars (committed — they are not secrets).
+
+variable "admin_username" {
+  description = "Username of the platform admin account (member of argocd-admins)."
   type        = string
-  default     = "kurt"
 }
 
-variable "test_admin_email" {
-  description = "Email for the test admin. ArgoCD shows this as the logged-in identity."
+variable "admin_email" {
+  description = "Email for that account. ArgoCD displays it as the logged-in identity."
   type        = string
-  default     = "kurt@kurtcebe.nl"
 }
 
-variable "test_admin_password" {
+variable "admin_initial_password" {
   description = <<-EOT
-    INITIAL password for the test admin, set as a *temporary* credential — the
-    user is forced to change it on first login, so this value stops being valid
-    the moment it is used. Supply via `export TF_VAR_test_admin_password=...`;
-    it lands in the LOCAL terraform.tfstate (gitignored), never in Git.
+    INITIAL password for the admin account, set as a *temporary* credential —
+    Keycloak forces a change at first login, so this value stops being a working
+    credential the moment it is used. Supply via
+    `export TF_VAR_admin_initial_password=...`; it lands in the LOCAL
+    terraform.tfstate (gitignored), never in Git.
   EOT
   type        = string
   sensitive   = true

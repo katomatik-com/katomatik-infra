@@ -28,41 +28,57 @@ it that way. Losing it is not fatal; every resource here can be re-imported.
 
 ## Running it
 
-Two terminals. First, the tunnel to the admin API — the provider talks to
-`localhost:8080`, so this must stay up for the whole run:
-
-```sh
-kubectl -n keycloak port-forward svc/keycloak-service 8080:8080
-```
-
-Then, in a second terminal, the credentials. These are read from the
-environment, never from a `.tfvars` file, so nothing sensitive is written to
-disk in this directory:
+Use the wrapper — `./tf.sh` opens the port-forward, waits for the admin API to
+actually answer, reads the admin credentials out of the cluster Secret, runs
+Terraform, and closes the tunnel again even if the run fails:
 
 ```sh
 cd terraform/keycloak
 
-# Bootstrap admin account, straight out of the cluster Secret.
+# Initial password for the admin account (forced to change at first login).
+# Leading space keeps it out of shell history under HIST_IGNORE_SPACE.
+ export TF_VAR_admin_initial_password='<pick something >=12 chars>'
+
+terraform init      # first time only
+./tf.sh plan
+./tf.sh apply
+```
+
+`TF_VAR_admin_initial_password` stays your job on purpose: the wrapper will not
+invent a value that ends up in state. Leave it unset and Terraform prompts.
+
+Doing it by hand is two terminals — the tunnel has to stay up for the whole run:
+
+```sh
+# terminal 1
+kubectl -n keycloak port-forward svc/keycloak-service 8080:8080
+
+# terminal 2
 export KEYCLOAK_USER=$(kubectl -n keycloak get secret keycloak-initial-admin \
   -o jsonpath='{.data.username}' | base64 -d)
 export KEYCLOAK_PASSWORD=$(kubectl -n keycloak get secret keycloak-initial-admin \
   -o jsonpath='{.data.password}' | base64 -d)
-
-# Initial password for the test admin (forced to change at first login).
-# Leading space keeps it out of shell history if HIST_IGNORE_SPACE is set.
- export TF_VAR_test_admin_password='<pick something >=12 chars>'
-
-terraform init      # first time only
 terraform plan
-terraform apply
 ```
 
-Sanity check that the credentials work before blaming the provider:
+Sanity check that the tunnel is up before blaming the provider:
 
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' \
   http://localhost:8080/realms/master/.well-known/openid-configuration   # 200
 ```
+
+## Relationship to `terraform/` (the parent directory)
+
+They are independent root modules. Terraform never recurses into
+subdirectories, so the parent's `plan`/`apply` cannot see or touch anything
+here — separate state, separate lock file, separate backend.
+
+One wrinkle worth knowing: the parent is an HCP *CLI-driven* workspace, and
+those upload the working directory (subdirectories included) to HCP as a
+configuration version. The files here would be inert there, but this workspace's
+local `terraform.tfstate` holds secrets, so `terraform/.terraformignore`
+excludes `keycloak/` explicitly rather than relying on default ignore rules.
 
 ## First-run only: the realm import
 

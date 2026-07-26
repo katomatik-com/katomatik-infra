@@ -13,3 +13,18 @@ spec:
   realm:
     realm: katomatik
     enabled: true
+    clients:
+      # ArgoCD UI — PUBLIC client + PKCE (no client secret). Phase 1: gate ArgoCD.
+      - clientId: argocd
+        name: ArgoCD
+        enabled: true
+        publicClient: true            # no secret; PKCE instead
+        standardFlowEnabled: true     # authorization-code flow (browser login)
+        directAccessGrantsEnabled: false
+        redirectUris:
+          - https://argocd.katomatik.com/auth/callback
+          - http://localhost:8085/auth/callback   # argocd CLI
+        webOrigins:
+          - https://argocd.katomatik.com
+        attributes:
+          pkce.code.challenge.method: S256        # enforce PKCE (S256)

@@ -36,3 +36,13 @@ spec:
                 name: keycloak-service
                 port:
                   number: 8080
+          # >>> TEMPORARY — admin console exposed for manual UI exploration.
+          # REMOVE this block and re-push when done; /admin must NOT stay public.
+          - path: /admin
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak-service
+                port:
+                  number: 8080
+          # <<< END TEMPORARY

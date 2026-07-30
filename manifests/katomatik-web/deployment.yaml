@@ -26,7 +26,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/katomatik-com/katomatik-web:be6ef2d
+          image: ghcr.io/katomatik-com/katomatik-web:f23db80
           ports:
             - name: http    # named port — the Service targets this name, not 8080
               containerPort: 8080

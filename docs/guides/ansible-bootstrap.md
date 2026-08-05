@@ -270,3 +270,35 @@ ansible-playbook site.yml
 The host is now a managed node: key-only SSH, a sudo user, firewall up, and
 the `base` role keeping it that way. Re-running the playbook is safe and
 **idempotent** — it only changes what's drifted. Next project phase: k3s.
+
+## Known gap — Ansible itself is not version-pinned
+
+Every other tool this repo drives is pinned in code: providers in
+`.terraform.lock.hcl`, charts by `targetRevision`, and the CLIs (terraform,
+kubectl, helm, sops, age) in `mise.toml`. **Ansible is the exception**, and
+deliberately so for now.
+
+Ansible is a Python package whose *collections* live alongside the interpreter
+that installed it. The working setup here has a large collection set installed
+via Homebrew (`amazon.aws`, `ansible.posix`, `community.*`, …). Pinning
+`ansible` in `mise.toml` would resolve the command to a different environment
+with none of those collections, and playbooks would fail with confusing
+"couldn't resolve module/action" errors — strictly worse than an unpinned but
+working Ansible.
+
+**Future work**, to close it properly rather than half-way:
+
+1. Add a `requirements.yml` declaring the collections the roles actually use —
+   discover them with `ansible-galaxy collection list` and by grepping the roles
+   for FQCNs (`community.general.*`, `ansible.posix.*`, …), rather than freezing
+   the whole current list.
+2. Install them into a **project-local** path (`ansible_collections/` with
+   `ANSIBLE_COLLECTIONS_PATH`, or a `collections/` dir plus `ansible.cfg`), so
+   the dependency set belongs to the repo and not to the laptop.
+3. Only then pin `ansible` (or `ansible-core` in a dedicated virtualenv) in
+   `mise.toml`, and add `ansible-galaxy collection install -r requirements.yml`
+   to the bootstrap steps above.
+
+Worth doing before a second machine — or CI — ever has to run these playbooks.
+A previous session lost time to exactly this class of problem: a callback plugin
+that had moved out of `community.general`, discovered only at runtime.

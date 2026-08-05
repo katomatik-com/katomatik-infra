@@ -1,0 +1,52 @@
+# Toolchain pin for this repo, managed by mise (https://mise.jdx.dev).
+#
+# Why this exists: everything else here is version-pinned in code — the ArgoCD chart
+# (apps/argocd.yaml), the Keycloak Operator kustomize base, the Terraform providers
+# (.terraform.lock.hcl) — but the CLIs that *drive* all of it were tribal knowledge.
+# `cd` into this repo with mise activated and you get the same tools that were used to
+# build it, instead of whatever Homebrew last upgraded you to.
+#
+# Versions below were read off the working setup on 2026-07-27, not chosen. Bump one
+# deliberately:
+#   mise ls-remote terraform | tail        # see what's available
+#   mise use terraform@<version>           # rewrites this file
+#
+# NOTE on precedence: with mise activated, these shims take priority inside this
+# directory over the Homebrew copies in /usr/local/bin. Outside it, brew's versions
+# still apply. That is the point, but it does mean `which terraform` can legitimately
+# give different answers depending on where you are standing.
+
+[tools]
+# Terraform. CAREFUL — this is the one pin with an overlap: the HCP workspace
+# (katomatik-com) has its OWN Terraform version setting, which governs remote runs of
+# terraform/. This pin governs the LOCAL CLI, which is what actually executes
+# terraform/keycloak/ (local backend, local execution — ADR-0015). Keep them in the
+# same minor version; a newer CLI can write state an older one refuses to read.
+terraform = "1.15.8"
+
+# Cluster access. kubectl's skew policy tolerates +/-1 minor from the API server, so
+# check `kubectl version` against the k3s node before jumping a minor here.
+kubectl = "1.36.1"
+
+# Helm 4. ArgoCD renders charts with its OWN bundled Helm, so this pin is for what YOU
+# run by hand (template/diff/the one-time ArgoCD bootstrap from argocd/values.yaml).
+# Local `helm template` output can therefore differ from what ArgoCD renders.
+helm = "4.2.3"
+
+# Secret handling — the two with no other pin anywhere, and the ones where a version
+# mismatch is most painful: sops and age must stay compatible with the encrypted files
+# already committed (ansible/roles/cloudflared/files/*.sops.yaml,
+# manifests/keycloak/keycloak-db.sops.yaml) and with the KSOPS build running in
+# argocd-repo-server (viaductoss/ksops:v4.5.1, see argocd/values.yaml).
+sops = "3.13.2"
+age = "1.3.1"
+
+# DELIBERATELY NOT PINNED — ansible.
+#
+# Ansible is a Python package whose *collections* live alongside the interpreter that
+# installed it. The working setup here has a large set installed via Homebrew
+# (amazon.aws, ansible.posix, community.*, ...). Pinning ansible in mise would resolve
+# `ansible` to a different environment with none of those collections, and playbooks
+# would fail with confusing "couldn't resolve module/action" errors — a strictly worse
+# outcome than an unpinned-but-working ansible. Revisit only alongside a proper
+# requirements.yml + a dedicated virtualenv.

@@ -24,15 +24,19 @@ resource "keycloak_openid_client" "authdemo" {
   implicit_flow_enabled        = false
   service_accounts_enabled     = false
 
-  # pkce_code_challenge_method deliberately LEFT UNSET — note the contrast with the
-  # ArgoCD client, which enforces S256.
+  # PKCE enforced, same as the ArgoCD client — but for a different reason, and only
+  # after checking rather than assuming.
   #
-  # Spring Security applies PKCE automatically only to PUBLIC clients; for a
-  # confidential client it sends no code challenge unless explicitly configured
-  # (ClientSettings.requireProofKey). Setting S256 here would therefore make
-  # Keycloak demand a challenge the app never sends, and every login would fail.
-  # The client secret already authenticates the client, which is the protection
-  # PKCE substitutes for when no secret can exist.
+  # The old Spring Security behaviour (6.x) was to apply PKCE automatically ONLY to
+  # public clients, which would make enforcing S256 here break every login. That is
+  # no longer true: Spring Security 7 sends a code challenge for confidential clients
+  # too. VERIFIED against the running app — the authorization request it builds
+  # carries `code_challenge_method=S256` with no extra configuration.
+  #
+  # So this is defence in depth rather than a substitute for the secret: the secret
+  # authenticates the client, PKCE additionally binds the authorization code to the
+  # session that requested it, killing code-interception even if a redirect leaks.
+  pkce_code_challenge_method = "S256"
 
   # Spring Security's callback path is /login/oauth2/code/{registrationId}, and
   # the registration is named `keycloak` in application.yaml — so this URI is

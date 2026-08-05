@@ -21,3 +21,34 @@ output "argocd_admins_group" {
   description = "Group name that argocd-rbac-cm's policy.csv must match on."
   value       = keycloak_group.argocd_admins.name
 }
+
+# --- katomatik-authdemo (Phase 2) ---------------------------------------------
+
+output "authdemo_client_id" {
+  description = "clientID for the Spring app's application.yaml."
+  value       = keycloak_openid_client.authdemo.client_id
+}
+
+output "authdemo_client_secret" {
+  description = <<-EOT
+    Client secret for the Spring app. CONFIDENTIAL client, so unlike ArgoCD there
+    IS a secret here. Read it with `terraform output -raw authdemo_client_secret`
+    and pass it to the app as an environment variable — never commit it. Phase 3
+    SOPS-encrypts it for the cluster.
+  EOT
+  value       = keycloak_openid_client.authdemo.client_secret
+  sensitive   = true
+}
+
+output "authdemo_roles" {
+  description = "Client role names the app maps to Spring authorities (ROLE_USER / ROLE_ADMIN)."
+  value       = [keycloak_role.authdemo_user.name, keycloak_role.authdemo_admin.name]
+}
+
+output "authdemo_test_users" {
+  description = "Test usernames and the single client role each one holds (deliberately disjoint)."
+  value = {
+    for u, cfg in local.authdemo_test_users :
+    keycloak_user.authdemo_test[u].username => (u == "demo-admin" ? "admin" : "user")
+  }
+}

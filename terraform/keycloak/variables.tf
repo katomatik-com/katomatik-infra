@@ -46,6 +46,29 @@ variable "argocd_cli_sso_port" {
   default     = 8085
 }
 
+variable "authdemo_local_port" {
+  description = <<-EOT
+    Local port the katomatik-authdemo Spring app runs on, used to build its
+    redirect URIs. 8081 rather than Spring Boot's default 8080, because tf.sh
+    port-forwards Keycloak's admin API to localhost:8080 — the two would collide.
+  EOT
+  type        = number
+  default     = 8081
+}
+
+variable "test_user_password" {
+  description = <<-EOT
+    Password for the katomatik-authdemo TEST users (demo-user / demo-admin), set
+    as a NON-temporary credential so repeated local login testing isn't
+    interrupted by a forced password change. Test-only: a human's account should
+    never be provisioned this way. Supply via
+    `export TF_VAR_test_user_password=...`; it lands in the LOCAL
+    terraform.tfstate (gitignored), never in Git.
+  EOT
+  type        = string
+  sensitive   = true
+}
+
 // Deliberately NO defaults on the two below: they decide who holds admin on
 // ArgoCD. A default would let a run quietly grant that to whoever the default
 // names. Values live in terraform.tfvars (committed — they are not secrets).

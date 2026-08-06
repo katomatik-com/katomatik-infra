@@ -32,6 +32,9 @@ Public infrastructure for **katomatik.com** (ArgoCD runs at `argocd.katomatik.co
 
 ArgoCD's UI is gated by Keycloak SSO (OIDC + PKCE); admin comes from the
 `argocd-admins` group, and Keycloak's own admin console is not exposed publicly.
+`katomatik-authdemo` (`authdemo.katomatik.com`) is a small Spring Boot service that
+logs in against the same realm and enforces role-based access in-app — the worked
+example behind [ADR-0016](docs/adr/0016-authdemo-app-auth-design.md).
 
 *Planned:* Prometheus + Grafana (observability), and my own web apps.
 
@@ -65,6 +68,7 @@ Two kinds, kept deliberately separate:
   - [Cloudflare Tunnel](docs/guides/cloudflare-tunnel-setup.md)
   - [Terraform — Cloudflare](docs/guides/terraform-cloudflare.md)
   - [Keycloak + OIDC SSO](docs/guides/keycloak-oidc-sso.md) — self-hosted IDP, and putting ArgoCD behind it
+  - [Securing an app with OIDC](docs/guides/securing-an-app-with-oidc.md) — the app side: roles vs groups, the ID-token trap, in-app RBAC
   - [Adding an app](docs/guides/add-an-app.md) — deploy a workload and serve it at a public hostname
 - **Decisions** (`docs/adr/`) — *why* each choice was made, and what was rejected.
   Start at the [ADR index](docs/adr/README.md).

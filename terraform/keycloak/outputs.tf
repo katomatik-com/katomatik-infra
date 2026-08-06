@@ -45,6 +45,24 @@ output "authdemo_roles" {
   value       = [keycloak_role.authdemo_user.name, keycloak_role.authdemo_admin.name]
 }
 
+output "authdemo_test_password" {
+  description = <<-EOT
+    Password shared by both authdemo test users (demo-user / demo-admin), for
+    logging in at https://authdemo.katomatik.com.
+
+    Read it from the RESOURCE rather than from var.test_user_password, so it
+    still works in a shell where that variable isn't exported — the value lives
+    in state either way. Retrieve with:
+      ./tf.sh output -raw authdemo_test_password
+
+    These are disposable TEST identities with non-temporary passwords: a
+    deliberate simplification so repeated login testing isn't interrupted. Never
+    provision a human's account this way.
+  EOT
+  value       = keycloak_user.authdemo_test["demo-user"].initial_password[0].value
+  sensitive   = true
+}
+
 output "authdemo_test_users" {
   description = "Test usernames and the single client role each one holds (deliberately disjoint)."
   value = {

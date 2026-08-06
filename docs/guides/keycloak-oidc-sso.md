@@ -273,6 +273,43 @@ the target is registered, which the client already handles with
 `valid_post_logout_redirect_uris = ["+"]` ("reuse the redirect URIs"). Worth doing where
 a browser may be shared, since otherwise "log out" does not really log out.
 
+## Deploying a relying party behind the tunnel
+
+Two failures that only appear in the cluster — neither can be reproduced locally, which
+is what makes them expensive.
+
+**Traefik overwrites `X-Forwarded-Proto`, so an app cannot derive its own HTTPS URL.**
+TLS terminates at Cloudflare; cloudflared then speaks plain HTTP to Traefik. Traefik,
+correctly, does not trust forwarded headers from an untrusted client and rewrites
+`X-Forwarded-Proto` to the scheme it actually received — `http`. Any app that builds
+absolute URLs from the request therefore believes it is running on HTTP.
+
+For OIDC this is fatal in a specific way: Spring expands `{baseUrl}` in its
+`redirect-uri` to `http://<host>/login/oauth2/code/keycloak`, Keycloak compares it
+against the registered `https://` URI, and every login dies on *"Invalid parameter:
+redirect_uri"*. Setting Spring's `server.forward-headers-strategy: framework` is correct
+and worth having, but it cannot help when the proxy never sends the header.
+
+The fix is the one Keycloak itself already uses: **tell the app its public URL rather
+than letting it guess**. Keycloak has `hostname: https://auth.katomatik.com` in its CR;
+the Spring app gets `SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_REDIRECT_URI`
+in its Deployment. Three things must then agree exactly: the Ingress host, that pinned
+URI, and the redirect URI registered on the Keycloak client in Terraform.
+
+> The alternative — configuring Traefik's `forwardedHeaders.trustedIPs` to trust
+> cloudflared — would fix this for every app at once. It is deliberately not done:
+> trusting `X-Forwarded-*` is only safe if nothing else can reach Traefik, and that is
+> a cluster-wide security decision deserving its own ADR rather than a side effect of
+> deploying one app.
+
+**`runAsNonRoot: true` requires a NUMERIC `USER` in the image.** The kubelet verifies
+the user is not root *before* starting the container, and it will not read `/etc/passwd`
+inside the image to resolve a name. An image ending in `USER app` fails admission with
+*"container has runAsNonRoot and image has non-numeric user (app), cannot verify user is
+non-root"* — even though the user genuinely is non-root. Declare an explicit UID
+(`adduser -u 10001 ...` / `USER 10001`) and mirror it as `runAsUser` in the pod spec.
+Docker enforces none of this, so `docker run` will never catch it.
+
 ## Traps worth knowing
 
 - **Terraform attributes that are optional but NOT computed get cleared if you don't

@@ -11,6 +11,11 @@
 # Usage:  ./tf.sh plan
 #         ./tf.sh apply
 #         ./tf.sh output
+#         SECRET=$(./tf.sh output -raw authdemo_client_secret)
+#
+# All of this script's own progress messages go to STDERR, deliberately: stdout
+# must carry ONLY terraform's output, or command substitution like the last line
+# above captures "==> closing port-forward" instead of the value.
 #
 # Still supplied by you, deliberately: TF_VAR_admin_initial_password. If it isn't
 # set, Terraform prompts for it — a value that ends up in state should be a
@@ -36,7 +41,7 @@ cleanup() {
   # Only tear down a tunnel THIS script opened; an editor/terminal you left
   # running elsewhere is none of our business.
   if [[ -n "$port_forward_pid" ]]; then
-    echo "==> closing port-forward"
+    echo "==> closing port-forward" >&2
     kill "$port_forward_pid" 2>/dev/null || true
   fi
 }
@@ -46,9 +51,9 @@ trap cleanup EXIT
 # discovery document specifically, not merely "something is listening on 8080",
 # so an unrelated local service can't be mistaken for the admin API.
 if curl -sf --max-time 2 "$PROBE" 2>/dev/null | grep -q '"issuer"'; then
-  echo "==> reusing tunnel already open on :${LOCAL_PORT}"
+  echo "==> reusing tunnel already open on :${LOCAL_PORT}" >&2
 else
-  echo "==> opening port-forward ${NAMESPACE}/${SERVICE} -> localhost:${LOCAL_PORT}"
+  echo "==> opening port-forward ${NAMESPACE}/${SERVICE} -> localhost:${LOCAL_PORT}" >&2
   kubectl -n "$NAMESPACE" port-forward "$SERVICE" "${LOCAL_PORT}:8080" >/dev/null 2>&1 &
   port_forward_pid=$!
 
@@ -66,7 +71,7 @@ else
     echo "error: tunnel opened but the admin API never answered on :${LOCAL_PORT}" >&2
     exit 1
   }
-  echo "==> tunnel ready"
+  echo "==> tunnel ready" >&2
 fi
 
 # The bootstrap admin account. Exported into Terraform's environment only — the
@@ -77,7 +82,7 @@ KEYCLOAK_PASSWORD="$(kubectl -n "$NAMESPACE" get secret keycloak-initial-admin \
   -o jsonpath='{.data.password}' | base64 -d)"
 export KEYCLOAK_USER KEYCLOAK_PASSWORD
 
-echo "==> terraform $*"
+echo "==> terraform $*" >&2
 # NOT `exec` — that would replace this shell and the EXIT trap would never fire,
 # orphaning the port-forward. Run it as a child so cleanup always happens.
 terraform "$@"

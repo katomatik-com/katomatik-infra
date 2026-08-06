@@ -68,6 +68,31 @@ curl -s -o /dev/null -w '%{http_code}\n' \
   http://localhost:8080/realms/master/.well-known/openid-configuration   # 200
 ```
 
+## Getting values out
+
+Everything a relying party needs comes from outputs, so nothing has to be copied
+by hand or hunted for in the admin console:
+
+```sh
+./tf.sh output                                    # non-secret values
+./tf.sh output -raw authdemo_client_secret        # the Spring app's OIDC secret
+./tf.sh output -raw authdemo_test_password        # demo-user / demo-admin login
+```
+
+Secrets are marked `sensitive`, so a bare `./tf.sh output` prints `<sensitive>`
+and only `-raw` reveals them — you have to ask deliberately.
+
+Safe to use in command substitution:
+
+```sh
+export KEYCLOAK_CLIENT_SECRET=$(./tf.sh output -raw authdemo_client_secret)
+```
+
+The wrapper writes its own `==>` progress lines to **stderr** precisely so this
+works. If they went to stdout, the variable would capture
+`==> closing port-forward` instead of the secret — a genuinely nasty bug, since
+the app would then fail authentication with a value that *looks* set.
+
 ## Relationship to `terraform/` (the parent directory)
 
 They are independent root modules. Terraform never recurses into

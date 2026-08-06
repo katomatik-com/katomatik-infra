@@ -65,16 +65,25 @@ The Cloudflare provider reads this env var directly (see `provider "cloudflare"
 ## Part 2 — Config values
 
 `terraform/terraform.tfvars` (committed, non-secret). The **account ID** is on
-the account home (right sidebar) or any zone's Overview → "API" box. The **zone
-is created by Terraform** (`cloudflare_zone.primary`), so you give its *name*,
-not an ID:
+the account home (right sidebar) or any zone's Overview → "API" box. **Zones are
+created by Terraform** (`cloudflare_zone.this`), so you give each one's *name* —
+as a map key — not an ID:
 
 ```hcl
 cloudflare_account_id = "<account-id>"
-cloudflare_zone_name  = "katomatik.com"
 tunnel_name = "homelab"
-hostnames   = ["argocd"]
+
+zones = {
+  "katomatik.com" = {
+    hostnames = ["argocd"]
+  }
+}
 ```
+
+`hostnames` lists **subdomain labels only**; every apex gets its record
+automatically (`cloudflare_dns_record.apex`). One tunnel serves every zone in
+the map — a `cfargotunnel.com` CNAME resolves for any zone in the same
+Cloudflare account, so a second domain needs no second tunnel.
 
 ---
 
@@ -99,7 +108,12 @@ nameservers point at Cloudflare. Read the assigned pair and set **both** at your
 **registrar** for the domain:
 
 ```sh
-terraform output zone_name_servers   # e.g. arnold.ns.cloudflare.com / linda.ns.cloudflare.com
+# A map keyed by apex, since there can be more than one zone:
+terraform output zone_name_servers
+# => { "katomatik.com" = ["arnold.ns.cloudflare.com", "linda.ns.cloudflare.com"] }
+
+# Just one domain's pair:
+terraform output -json zone_name_servers | jq '."katomatik.com"'
 ```
 
 The zone flips to **Active** once Cloudflare sees the delegation (minutes–hours);
@@ -150,9 +164,24 @@ curl -sSI https://argocd.katomatik.com | head -1   # HTTP/2 200
 
 ## Adding more hostnames later
 
-1. Add the subdomain to `hostnames` in `terraform.tfvars` → `terraform apply`
-   (creates the CNAME). No cloudflared change (catch-all → Traefik).
+1. Add the subdomain to that zone's `hostnames` in the `zones` map in
+   `terraform.tfvars` → `terraform apply` (creates the CNAME). No cloudflared
+   change (catch-all → Traefik).
 2. Add a Kubernetes Ingress for it (committed, ArgoCD applies).
+
+## Adding a whole new domain later
+
+1. Add a new top-level entry to `zones` (apex as the key). Terraform creates the
+   zone, its apex record, and any subdomain records. The **existing tunnel is
+   reused** — no new tunnel, no cloudflared credential rotation.
+2. Delegate that domain's nameservers at its registrar (see Part 4). Only the
+   new zone is Pending; the others keep resolving throughout.
+3. Add the app's Ingress as usual.
+
+> **Renaming or removing a key is not free.** The apex key and the subdomain
+> labels build every resource address, so changing one is a destroy + create of
+> real DNS. Additions are safe; re-keying needs a `moved` block (see
+> `terraform/moved.tf`, written for the single-zone → multi-zone refactor).
 
 ## Troubleshooting (what bit us)
 

@@ -4,7 +4,7 @@
 # Traefik on :80 (the tunnel's catch-all, ADR-0002). cloudflared preserves the
 # original Host header, so Traefik sees `authdemo.katomatik.com` and this host rule
 # is what selects the app. The DNS record is Terraform-managed — the `authdemo`
-# entry in terraform/terraform.tfvars `hostnames`.
+# entry under `zones["katomatik.com"].hostnames` in terraform/terraform.tfvars.
 #
 # No TLS block: Cloudflare terminates HTTPS at the edge, so traffic inside the
 # cluster is plain HTTP. That is exactly why the app sets

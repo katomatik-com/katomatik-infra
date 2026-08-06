@@ -50,9 +50,9 @@ variable "authdemo_url" {
   description = <<-EOT
     Public URL of the katomatik-authdemo app (Phase 3). Used to build the
     production redirect URIs on its Keycloak client. The matching DNS record is
-    the `authdemo` entry in ../terraform.tfvars `hostnames` — both must exist or
-    login fails: no DNS means no app, no redirect URI means Keycloak refuses the
-    callback.
+    the `authdemo` entry under `zones["katomatik.com"].hostnames` in
+    ../terraform.tfvars — both must exist or login fails: no DNS means no app,
+    no redirect URI means Keycloak refuses the callback.
   EOT
   type        = string
   default     = "https://authdemo.katomatik.com"

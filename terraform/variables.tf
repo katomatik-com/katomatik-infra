@@ -7,22 +7,24 @@ variable "cloudflare_account_id" {
   type        = string
 }
 
-variable "cloudflare_zone_name" {
-  description = "Apex domain for the zone Terraform creates (e.g. katomatik.com)."
-  type        = string
-  default     = "katomatik.com"
-}
-
 variable "tunnel_name" {
   description = "Name of the Cloudflare Tunnel."
   type        = string
   default     = "homelab"
 }
 
-variable "hostnames" {
-  description = "Subdomains routed through the tunnel (relative to the zone)."
-  type        = list(string)
-  default     = ["argocd"]
+# Replaces the old single-domain pair (cloudflare_zone_name + hostnames), which
+# could only ever describe ONE zone. Keyed by apex so a zone's name is its
+# identity — that key ends up in every resource address, so it must be stable.
+variable "zones" {
+  description = <<-EOT
+    Domains served through the tunnel, keyed by apex (e.g. "katomatik.com").
+    `hostnames` lists the SUBDOMAIN labels to create records for, relative to
+    the zone. The apex record is always created and must NOT be listed here.
+  EOT
+  type = map(object({
+    hostnames = optional(list(string), [])
+  }))
 }
 
 variable "neon_organization_id" {

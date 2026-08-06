@@ -52,6 +52,8 @@ example behind [ADR-0016](docs/adr/0016-authdemo-app-auth-design.md).
 ├── docs/
 │   ├── guides/       # how-to guides (per phase)
 │   └── adr/          # Architectural Decision Records — the "why"
+├── scripts/          # ground-truth.sh — collects live state for the docs drift audit
+├── .claude/commands/ # project slash commands (/docs-drift-audit)
 ├── .sops.yaml        # which files SOPS encrypts, and to which age key
 └── CLAUDE.md         # working conventions for AI-assisted sessions
 ```

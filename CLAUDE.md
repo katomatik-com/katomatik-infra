@@ -22,6 +22,21 @@ live in `docs/`.
   as an ADR and add it to the index table in `docs/adr/README.md`. The current
   set is listed there.
 
+## Where things live — docs vs open work
+- **Documentation stays in Git** (`docs/adr/`, `docs/guides/`): it is code-adjacent, it
+  ships in the same commit as the config it explains, and the repo is public. → ADR-0017
+- **Open work is tracked in Jira**, project **`KI` (katomatik-infra)** at
+  `katomatik.atlassian.net` — one epic per initiative, and each issue records *why* an
+  item was deferred, not just what it is. Don't start a parallel TODO list in the repo.
+- `.plan/securing-apps.md` is a **frozen snapshot**, not the working list. It is
+  gitignored, so never delete from it — there is no history to recover.
+- Docs are kept true by reconciliation, not memory: **`/docs-drift-audit`** checks every
+  factual claim in `docs/` against live state collected by **`scripts/ground-truth.sh`**
+  (HCP + local Terraform, `kubectl`, public HTTP, `git log`). It must run locally — the
+  cluster API is LAN-only and the Keycloak workspace keeps local state, so CI cannot see
+  either. The collector gathers no secrets and writes outside the repo; a source that
+  fails makes its claims UNVERIFIABLE rather than silently confirmed.
+
 ## Secrets — SOPS + age
 - Encrypt secret *values* in YAML with an age keypair, commit the encrypted
   files to Git, and let ArgoCD decrypt at render time. Chosen over Sealed

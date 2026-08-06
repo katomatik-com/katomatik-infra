@@ -43,3 +43,4 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0014](0014-keycloak-operator.md) | Deploy Keycloak via the official Keycloak Operator | Accepted (revises 0009 deployment) |
 | [0015](0015-keycloak-config-via-terraform.md) | Manage Keycloak realm/client config with Terraform | Accepted (revises 0014 config) |
 | [0016](0016-authdemo-app-auth-design.md) | App auth design — client roles, a confidential client, RBAC in the app | Accepted |
+| [0017](0017-docs-in-git-backlog-in-jira.md) | Documentation stays in Git; open work is tracked in Jira | Accepted |

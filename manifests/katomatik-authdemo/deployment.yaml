@@ -63,6 +63,28 @@ spec:
                 secretKeyRef:
                   name: authdemo-oidc
                   key: client-secret
+            # Pin the public redirect URI instead of letting Spring derive it.
+            #
+            # WHY, because this is subtle and cost a debugging round: the app's
+            # application.yaml uses `{baseUrl}`, which Spring builds from the
+            # incoming request. TLS is terminated at Cloudflare, so Traefik
+            # receives plain HTTP from cloudflared and — correctly, for an
+            # untrusted client — OVERWRITES X-Forwarded-Proto with "http".
+            # Spring therefore sees http, builds
+            # http://authdemo.katomatik.com/login/oauth2/code/keycloak, and
+            # Keycloak rejects it: the registered URI is https. The app's
+            # `forward-headers-strategy: framework` is correct and still useful,
+            # but it cannot help when the proxy never sends the header.
+            #
+            # This is exactly how Keycloak solves the same problem next door —
+            # `hostname: https://auth.katomatik.com` in its CR, rather than
+            # trusting a derived scheme. Same fix, same reason.
+            #
+            # COUPLED to the Ingress host in ingress.yaml and to the redirect URI
+            # registered in terraform/keycloak/client-authdemo.tf. All three must
+            # agree, exactly.
+            - name: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_REDIRECT_URI
+              value: https://authdemo.katomatik.com/login/oauth2/code/keycloak
           # Three probes, because a JVM is not a static file server.
           #
           # startupProbe is the important one: it gives the JVM up to 60s

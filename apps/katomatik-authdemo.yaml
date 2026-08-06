@@ -1,0 +1,27 @@
+# Application: katomatik-authdemo — the Spring Boot service that exercises the
+# Keycloak OIDC login and role-based access control end to end (ADR-0010: apps
+# authenticate natively, no proxy in front).
+#
+# A CHILD of the app-of-apps root (argocd/root-app.yaml): committing this file is
+# what deploys the app. Source manifests live in this repo; the app's own source
+# is a separate repo, published to GHCR by its CI.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: katomatik-authdemo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/katomatik-com/katomatik-infra.git
+    targetRevision: main
+    path: manifests/katomatik-authdemo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: katomatik-authdemo     # dedicated namespace, one per app
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true          # made on first sync

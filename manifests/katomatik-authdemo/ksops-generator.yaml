@@ -1,0 +1,18 @@
+# KSOPS generator: decrypts authdemo-oidc.sops.yaml into a real Secret during
+# ArgoCD's kustomize render (ADR-0012, docs/guides/argocd-secret-decryption.md).
+#
+# FILENAME MATTERS: this file must NOT contain "secret" in its name. .gitignore
+# blocks `*secret*.yaml` as a plaintext-secret safety net, and would silently drop
+# a file called e.g. secret-generator.yaml — the app would then render without its
+# Secret and fail in a confusing way. Hence `ksops-generator.yaml`, matching
+# manifests/keycloak/.
+apiVersion: viaduct.ai/v1
+kind: ksops
+metadata:
+  name: authdemo-oidc-generator
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ksops
+files:
+  - ./authdemo-oidc.sops.yaml

@@ -41,6 +41,16 @@ helm = "4.2.3"
 sops = "3.13.2"
 age = "1.3.1"
 
+# Rendering the secret-bearing apps locally the way ArgoCD does
+# (`kustomize build --enable-alpha-plugins --enable-exec manifests/<app>`).
+#
+# ksops is pinned to 4.5.1 SPECIFICALLY because that is the version the
+# repo-server runs (viaductoss/ksops:v4.5.1 in argocd/values.yaml). If those two
+# drift, a manifest can render fine on your laptop and fail in-cluster — the worst
+# kind of bug to debug. Bump them together, or not at all.
+kustomize = "5.8.1"
+ksops = "4.5.1"
+
 # DELIBERATELY NOT PINNED — ansible.
 #
 # Ansible is a Python package whose *collections* live alongside the interpreter that

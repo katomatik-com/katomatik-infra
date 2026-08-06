@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# The katomatik-authdemo workload plus its KSOPS-decrypted OIDC client secret.
+#
+# This directory is a kustomization (not plain manifests like katomatik-web) for
+# exactly one reason: KSOPS is a kustomize generator, and it is the only way the
+# encrypted Secret becomes a real one at render time. That is the deliberate
+# narrow exception to ADR-0008's "plain manifests per app" — kustomize enters
+# only where secrets are involved (ADR-0012).
+resources:
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+generators:
+  - ./ksops-generator.yaml

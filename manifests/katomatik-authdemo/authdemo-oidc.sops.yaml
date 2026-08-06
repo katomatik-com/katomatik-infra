@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: authdemo-oidc
+type: Opaque
+stringData:
+    client-secret: ENC[AES256_GCM,data:zygUiNM55f07b9zEvgg+4hgpJ02M9ZiS3mQmUPusMklr4VPMT+nb88JCDSWPI2qAhjAJX2VlBJGlfRGNr/Gfzeh0li5zZgyf7WvhnofezK4RLQtFpHw=,iv:buWq/72nju5/LNbDFCMlmcucv1I9qMLYYNc1me035H0=,tag:5xeT37dk8hcBAcs7Z3gllA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBiWnNYeURzVVh4YzdMYU5X
+            UnpnV3hkWjZmMEdNaDZBY3JZRlV4QjVUKzJBClRBd01mWW1rYzlNcW12c2lTemgv
+            cng0ZzZyRjlndUZCajVUSlJ0c0tCdTAKLS0tIFF3YUQ0dlcycTN0eVNHaURaNGpk
+            Q1dPZlppbDZBanAzc2d0QS9XekJMVFkKjzFIaSypB3Hd8v2819ZMs/dGK+EsT3lM
+            edDvB6MlWQEeeFmsoabqcnOf9UEMbD1ndYUNmDWTSH+1AFgfdICd1w==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1mj9llmgzyevm6glaj8pdcc907t2kqnz4vl9juwtk3y5x59yeucvsvrrzxs
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBLVG1WbHpEd0lrSWRIeUNH
+            ZUVKbDVrUUc1U3kvME1rY0ZuMlh6ak9wMVRJCnpJK0h1Ry8zYkRqTWpvS05TMzFS
+            MTM5RlFoL0hYVEdiaWJCZlBYL2tnSXcKLS0tIHM4Tkdtd0YwTWJXQnA4WGZmVklk
+            dEdudlh0UFM1MTB5Tm43RjB6Q0I1T3MKSb8ze+uQVWN++iiIkBBPj1LgLC/VNpG1
+            s1YSDzt08tlbN5Wnj8D+p2nVTnse0/MzQcCQBvlEfIHmwLm+C4128Q==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1365my9m5sjp4gghlu40g8z5j8wx0r5pzd6a6gxfn69rex3mgy5lq3q80up
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-08-06T11:04:06Z"
+    mac: ENC[AES256_GCM,data:ZKxFG4vR6tQgr5njsGcouCSUS78QhIXpkyiqIB0e2jBhWGNAboWNpvbc+4/jnuMKGMMJnQy5kz6bGrWTH7brfG3DMDrZDp0ueow+vbInkiRpOi50M0SsquDJaefgFTsGisUI2WH4oVa1jFGHStvsz9WHDmPVN9mS+BOwWFcPyTI=,iv:/3zgSHje/jFOmnET/jpbdkL/5I+oe96Z8pQKLRkv9yw=,tag:gnnI+obsHns24QdnppXHig==,type:str]
+    version: 3.13.2

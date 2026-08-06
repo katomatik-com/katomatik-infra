@@ -1,0 +1,35 @@
+# Public entrypoint for authdemo.katomatik.com.
+#
+# Request path: Cloudflare (TLS + proxy) -> tunnel -> cloudflared on the host ->
+# Traefik on :80 (the tunnel's catch-all, ADR-0002). cloudflared preserves the
+# original Host header, so Traefik sees `authdemo.katomatik.com` and this host rule
+# is what selects the app. The DNS record is Terraform-managed — the `authdemo`
+# entry in terraform/terraform.tfvars `hostnames`.
+#
+# No TLS block: Cloudflare terminates HTTPS at the edge, so traffic inside the
+# cluster is plain HTTP. That is exactly why the app sets
+# `server.forward-headers-strategy: framework` — without it Spring would believe
+# the request was http:// and build a redirect_uri Keycloak rejects.
+#
+# Unlike the Keycloak Ingress, every path here is public-facing: this app has no
+# admin surface to withhold, and it does its own authorization per-route
+# (/user/** and /admin/** are enforced in the app, not at the edge — ADR-0010).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: katomatik-authdemo
+  labels:
+    app.kubernetes.io/name: katomatik-authdemo
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: authdemo.katomatik.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: katomatik-authdemo
+                port:
+                  number: 80     # the Service port, not the container's 8081

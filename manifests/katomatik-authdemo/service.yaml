@@ -1,0 +1,16 @@
+# Stable in-cluster address for the pods. Same shape as katomatik-web's Service:
+# callers speak to :80, the container keeps its own port, and targetPort refers to
+# the NAME so a container-port change only edits the Deployment.
+apiVersion: v1
+kind: Service
+metadata:
+  name: katomatik-authdemo
+  labels:
+    app.kubernetes.io/name: katomatik-authdemo
+spec:
+  selector:
+    app.kubernetes.io/name: katomatik-authdemo
+  ports:
+    - name: http
+      port: 80
+      targetPort: http     # the container's named port (8081)

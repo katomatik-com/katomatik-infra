@@ -1,0 +1,92 @@
+# The Spring Boot OIDC demo (Phase 2/3 of the securing-apps work). Source lives in
+# github.com/katomatik-com/katomatik-authdemo; only the image tag lands here.
+#
+# No `namespace:` — the ArgoCD Application (apps/katomatik-authdemo.yaml) sets
+# destination.namespace, so these manifests stay namespace-portable.
+#
+# The image tag is a git commit hash, never :latest — GitOps wants "what is
+# deployed" to map to a line in Git. Shipping a new build = bump this tag.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: katomatik-authdemo
+  labels:
+    app.kubernetes.io/name: katomatik-authdemo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: katomatik-authdemo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: katomatik-authdemo
+    spec:
+      securityContext:
+        # The image already creates and uses a non-root user; this makes the
+        # cluster REFUSE to start the pod if that ever regresses, rather than
+        # silently running as root.
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: ghcr.io/katomatik-com/katomatik-authdemo:8a93f64
+          ports:
+            - name: http
+              containerPort: 8081     # matches server.port in application.yaml
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            # readOnlyRootFilesystem is deliberately NOT set: Tomcat writes to
+            # /tmp, so it needs an emptyDir mount to work. Worth adding, but only
+            # after verifying it actually starts — untested hardening that breaks
+            # the pod is worse than none.
+          env:
+            # The OIDC client secret, from the KSOPS-decrypted Secret (ADR-0012).
+            # Spring resolves ${KEYCLOAK_CLIENT_SECRET} in application.yaml; if it
+            # is missing the app fails fast at startup rather than serving a
+            # login that mysteriously 401s.
+            - name: KEYCLOAK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: authdemo-oidc
+                  key: client-secret
+          # Three probes, because a JVM is not a static file server.
+          #
+          # startupProbe is the important one: it gives the JVM up to 60s
+          # (12 x 5s) to come up, and — crucially — the liveness probe does not
+          # run at all until it succeeds. Without it, a slow start on a busy
+          # single node gets the container killed and restarted forever.
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            failureThreshold: 12
+          # `/` is the public landing page, so it answers 200 without a session.
+          # Any authenticated path would 302 to Keycloak and read as unhealthy.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 20
+          # A JVM needs materially more than the static site next door. The
+          # container runs with -XX:MaxRAMPercentage=75, so the heap sizes itself
+          # from this limit: 512Mi limit -> ~384Mi max heap, leaving headroom for
+          # metaspace, thread stacks and the JVM itself.
+          #
+          # No CPU limit on purpose (house pattern): CPU is compressible, so
+          # throttling a slow JVM start is worse than letting it burst.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 320Mi
+            limits:
+              memory: 512Mi

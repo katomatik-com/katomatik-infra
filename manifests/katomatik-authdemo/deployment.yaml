@@ -26,12 +26,22 @@ spec:
         # The image already creates and uses a non-root user; this makes the
         # cluster REFUSE to start the pod if that ever regresses, rather than
         # silently running as root.
+        #
+        # runAsUser is NUMERIC and must stay that way. The kubelet verifies
+        # runAsNonRoot before starting the container and will not read
+        # /etc/passwd inside the image to resolve a username — an image whose
+        # USER is a name fails admission with "image has non-numeric user ...,
+        # cannot verify user is non-root". Docker does not enforce any of this,
+        # so a local `docker run` cannot catch it; only a real cluster will.
+        # 10001 matches the UID baked into the image.
         runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: app
-          image: ghcr.io/katomatik-com/katomatik-authdemo:8a93f64
+          image: ghcr.io/katomatik-com/katomatik-authdemo:ab897d6
           ports:
             - name: http
               containerPort: 8081     # matches server.port in application.yaml

@@ -60,7 +60,7 @@ The credential (`~/.cloudflared/<ID>.json`) holds `AccountTag`, `TunnelID`,
 First, see the values:
 
 ```sh
-cat ~/.cloudflared/cee9c4b7-ce6a-406c-9a9e-f3e2ecf65c07.json
+cat ~/.cloudflared/<TUNNEL-ID>.json
 ```
 
 Create the encrypted file with the SOPS editor (it encrypts on save, so
@@ -75,7 +75,7 @@ In the editor, replace the template with the three values from the JSON:
 
 ```yaml
 AccountTag: "<AccountTag from the JSON>"
-TunnelID: "cee9c4b7-ce6a-406c-9a9e-f3e2ecf65c07"
+TunnelID: "<TunnelID from the JSON>"
 TunnelSecret: "<TunnelSecret from the JSON>"
 ```
 
@@ -155,8 +155,9 @@ curl -sSI https://argocd.katomatik.com | head -5     # expect HTTP 200
 
 Then open **https://argocd.katomatik.com** in a browser — the ArgoCD login, served
 through Cloudflare's TLS, down the tunnel, via Traefik, to `argocd-server`.
-Log in as `admin` (password from `argocd-initial-admin-secret`). You can retire
-the `kubectl port-forward` now.
+Log in via Keycloak — the UI is behind SSO now, see
+[keycloak-oidc-sso.md](keycloak-oidc-sso.md); the local `admin` account stays
+enabled only as break-glass. You can retire the `kubectl port-forward` now.
 
 The full chain, proven:
 

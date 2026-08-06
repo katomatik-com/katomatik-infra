@@ -9,7 +9,7 @@ Public infrastructure for **katomatik.com** (ArgoCD runs at `argocd.katomatik.co
 
 ## Hardware
 
-- M1 MacBook (16 GB RAM, ~165 GB allocated to Linux), dual-boot Fedora Asahi
+- M1 MacBook (8 GB RAM, ~165 GB allocated to Linux), dual-boot Fedora Asahi
   Remix (headless) + macOS.
 - KPN Box 12 over WiFi (no ethernet yet); the server is reachable on the LAN as
   `homelab.lan`.

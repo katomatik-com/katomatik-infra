@@ -29,7 +29,7 @@ live in `docs/`.
   Vault (too heavy for one node) — SOPS is portable and gives readable diffs.
 - Rules:
   - NEVER commit a plaintext secret. `.gitignore` blocks the danger files
-    (`age.key`, `*.age`, unencrypted `*secret*.yaml`).
+    (`age.key`, `*.agekey`, `keys.txt`, unencrypted `*secret*.yaml`).
   - The age private key is the crown jewel: back it up, never commit it; it's
     provided to ArgoCD as a one-time bootstrap secret.
   - Install SOPS + age tooling just before the first component that needs a

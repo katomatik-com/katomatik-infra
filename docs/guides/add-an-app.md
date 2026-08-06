@@ -68,7 +68,7 @@ port, and give it modest requests/limits. Health probes on a static site just
 GET `/`:
 
 ```yaml
-image: ghcr.io/katomatik-com/katomatik-web:dfe8989   # commit hash, not :latest
+image: ghcr.io/katomatik-com/katomatik-web:f23db80   # commit hash, not :latest
 ports:
   - name: http            # named — the Service targets this name, not the number
     containerPort: 8080
@@ -143,7 +143,7 @@ The hostname has to resolve to the tunnel. That's a proxied CNAME to
   creates one record per label:
 
   ```hcl
-  hostnames = ["argocd", "www"]
+  hostnames = ["argocd", "www", "auth", "authdemo"]
   ```
 
 - **The apex** — DNS forbids a real CNAME at a zone apex, so it can't ride the

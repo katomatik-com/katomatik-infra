@@ -286,18 +286,16 @@ with none of those collections, and playbooks would fail with confusing
 "couldn't resolve module/action" errors — strictly worse than an unpinned but
 working Ansible.
 
-**Future work**, to close it properly rather than half-way:
+**Future work**, to close it properly rather than half-way. Step 1 is already
+done — `ansible/requirements.yml` declares the three collections the roles
+actually use (`ansible.posix`, `community.general`, `community.sops`), and step
+A2 above installs from it. What remains:
 
-1. Add a `requirements.yml` declaring the collections the roles actually use —
-   discover them with `ansible-galaxy collection list` and by grepping the roles
-   for FQCNs (`community.general.*`, `ansible.posix.*`, …), rather than freezing
-   the whole current list.
-2. Install them into a **project-local** path (`ansible_collections/` with
+1. Install them into a **project-local** path (`ansible_collections/` with
    `ANSIBLE_COLLECTIONS_PATH`, or a `collections/` dir plus `ansible.cfg`), so
    the dependency set belongs to the repo and not to the laptop.
-3. Only then pin `ansible` (or `ansible-core` in a dedicated virtualenv) in
-   `mise.toml`, and add `ansible-galaxy collection install -r requirements.yml`
-   to the bootstrap steps above.
+2. Only then pin `ansible` (or `ansible-core` in a dedicated virtualenv) in
+   `mise.toml`.
 
 Worth doing before a second machine — or CI — ever has to run these playbooks.
 A previous session lost time to exactly this class of problem: a callback plugin

@@ -4,7 +4,7 @@
 # sets destination.namespace, so these manifests stay namespace-portable and the
 # name lives in exactly one place.
 #
-# The image tag is a git commit hash (dfe8989), NOT a floating tag like :latest.
+# The image tag is a git commit hash (f23db80), NOT a floating tag like :latest.
 # GitOps wants an immutable, committed reference so "what's deployed" always maps
 # to a line in Git. Shipping a new build = bump this tag and push (see the how-to
 # in docs/guides/add-an-app.md).

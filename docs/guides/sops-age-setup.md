@@ -10,11 +10,14 @@ recap: SOPS encrypts the *values* in a YAML/JSON file (keys stay readable) using
 a random data key, which it wraps for each **age recipient** (public key). Only
 the age **private key** can unwrap it.
 
-> **Two consumers, one key.** The age private key decrypts in two places:
-> **Ansible on this Mac** (host secrets, e.g. the Cloudflare Tunnel credential —
-> next phase) and **ArgoCD in-cluster** (Kubernetes Secrets — later, via a SOPS
-> plugin). The **server itself never holds the key**: Ansible decrypts here and
-> ships plaintext over SSH. This guide sets up the Mac side.
+> **Two consumers, two keys.** Decryption happens in two places: **Ansible on
+> this Mac** (host secrets, e.g. the Cloudflare Tunnel credential — next phase)
+> and **ArgoCD in-cluster** (Kubernetes Secrets — later, via a SOPS plugin).
+> ArgoCD gets its **own dedicated cluster key**, not the one you generate here;
+> Kubernetes Secrets are encrypted to *both*, so the Mac stays a break-glass
+> decryptor ([ADR-0012](../adr/0012-argocd-sops-decryption-ksops.md)). The
+> **server itself never holds a key**: Ansible decrypts here and ships plaintext
+> over SSH. This guide sets up the Mac side — the master key.
 
 ---
 
@@ -184,5 +187,9 @@ phase will:
 3. have **Ansible decrypt it on this Mac** and deploy it to the `cloudflared`
    host service.
 
-Later, **ArgoCD** reuses the *same* age key (added as an in-cluster bootstrap
-Secret) to decrypt Kubernetes Secrets at render time.
+Later, **ArgoCD** decrypts Kubernetes Secrets at render time using a **second,
+dedicated cluster key** (added as a one-time in-cluster bootstrap Secret) — not
+the master key generated here, which never leaves this Mac. Files under
+`manifests/` are encrypted to both recipients, so the master remains a
+break-glass decryptor; see `.sops.yaml` and
+[argocd-secret-decryption.md](argocd-secret-decryption.md).

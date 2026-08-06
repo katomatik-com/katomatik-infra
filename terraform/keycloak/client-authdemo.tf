@@ -45,13 +45,20 @@ resource "keycloak_openid_client" "authdemo" {
   #
   # Port 8081, NOT 8080: tf.sh port-forwards Keycloak's admin API to localhost:8080,
   # so the app would collide with it on Spring Boot's default port.
+  # Both the deployed app and local development are registered. Keeping localhost
+  # after deployment is deliberate: this app exists to be poked at, and losing the
+  # ability to run it locally against the real IDP would defeat that. The plain-HTTP
+  # localhost entry is acceptable ONLY because it is a loopback address — never
+  # register http:// for a routable host.
   valid_redirect_uris = [
+    "${var.authdemo_url}/login/oauth2/code/keycloak",
     "http://localhost:${var.authdemo_local_port}/login/oauth2/code/keycloak",
   ]
 
   # After logout Spring sends the user to the app root, not to the callback path,
   # so "+" (reuse valid_redirect_uris) would be wrong here — unlike the ArgoCD client.
   valid_post_logout_redirect_uris = [
+    "${var.authdemo_url}/*",
     "http://localhost:${var.authdemo_local_port}/*",
   ]
 

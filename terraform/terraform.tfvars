@@ -10,7 +10,10 @@ tunnel_name = "homelab"
 # Subdomains routed through the tunnel. The apex (katomatik.com) is NOT here —
 # it's handled by cloudflare_dns_record.apex in cloudflare.tf (CNAME flattening).
 # "www" gets a record so Traefik can 301 it to the apex (manifests/katomatik-web).
-hostnames = ["argocd", "www", "auth"]
+# "authdemo" is the Phase 2/3 Spring app. Its Keycloak client's production redirect
+# URI is built from the same hostname (terraform/keycloak/variables.tf authdemo_url) —
+# the two must agree, or login breaks on "Invalid parameter: redirect_uri".
+hostnames = ["argocd", "www", "auth", "authdemo"]
 
 # Non-secret organization_id for our Neon database
 neon_organization_id = "org-gentle-mud-12759690"

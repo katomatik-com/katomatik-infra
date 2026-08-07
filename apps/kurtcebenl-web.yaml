@@ -1,0 +1,33 @@
+# Application: the kurtcebe.nl static site — the lab's second domain.
+#
+# This is a CHILD of the app-of-apps root (argocd/root-app.yaml). The root scans
+# apps/ and turns every Application manifest here into a running app; committing
+# this file is what deploys the site. See docs/guides/add-an-app.md for the full
+# walkthrough, and ADR-0008 for why apps are structured this way.
+#
+# Note what is NOT special about serving a second domain: this file is identical
+# in shape to apps/katomatik-web.yaml. The domain only shows up in the Ingress's
+# host rule and in the Cloudflare zone (terraform/), never here.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kurtcebenl-web
+  namespace: argocd            # ArgoCD watches this namespace for Applications
+spec:
+  project: default
+  source:
+    # Anonymous HTTPS — the repo is public (ADR-0006), so no credential needed.
+    repoURL: https://github.com/katomatik-com/katomatik-infra.git
+    targetRevision: main
+    path: manifests/kurtcebenl-web    # the plain-YAML workload dir
+  destination:
+    server: https://kubernetes.default.svc   # this cluster
+    namespace: kurtcebenl-web                 # one namespace per app
+  syncPolicy:
+    # Same GitOps discipline as the rest of the lab: apply on Git change, revert
+    # manual cluster edits (selfHeal), delete resources removed from Git (prune).
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true    # the kurtcebenl-web namespace is made on first sync

@@ -1,0 +1,60 @@
+# The workload: the kurtcebe.nl landing page, served from its container image.
+#
+# No `namespace:` here on purpose — the ArgoCD Application (apps/kurtcebenl-web.yaml)
+# sets destination.namespace, so these manifests stay namespace-portable and the
+# name lives in exactly one place.
+#
+# The image is built from github.com/kurtcebe/kurtcebenl-web: an Astro site
+# compiled to static HTML and baked into an nginx image. Its CI emits `type=sha`
+# tags, so `sha-27ecc93` is an immutable reference to one commit — never
+# `:latest`, because GitOps wants "what's deployed" to map to a line in Git.
+# Shipping a new build = bump this tag and push (docs/guides/add-an-app.md).
+#
+# The image is public on GHCR (no imagePullSecret needed) and ships a linux/arm64
+# layer, which is mandatory here: the node is an M1 / Asahi box and containerd
+# will not emulate an amd64-only image.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kurtcebenl-web
+  labels:
+    app.kubernetes.io/name: kurtcebenl-web
+spec:
+  replicas: 1               # single-node lab; one static-site pod is plenty
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kurtcebenl-web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kurtcebenl-web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/kurtcebe/kurtcebenl-web:sha-27ecc93
+          ports:
+            - name: http    # named port — the Service targets this name, not 8080
+              containerPort: 8080   # nginx listens on 8080 so it needn't run as root
+          # A static site has no real "health" beyond "is the server answering",
+          # so both probes just GET / on the container port.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          # Requests reserve a floor; the memory limit caps it. No CPU limit on
+          # purpose (CPU is compressible — throttling beats OOM-killing here).
+          # Kept deliberately small: this shares an 8 GB node with Keycloak.
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi

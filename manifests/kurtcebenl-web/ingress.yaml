@@ -1,0 +1,33 @@
+# The public entrypoint for the apex, kurtcebe.nl.
+#
+# How a request gets here: Cloudflare (TLS + proxy) -> the tunnel -> cloudflared
+# on the host -> Traefik on :80 (the tunnel's single catch-all, see ADR-0002).
+# cloudflared preserves the original Host header, so Traefik sees `kurtcebe.nl`
+# and this Ingress's host rule is what actually selects the app.
+#
+# Nothing here is domain-aware except that host rule: the SAME tunnel and the
+# same Traefik serve katomatik.com. A second domain is a second Host value, not
+# a second ingress path — which is why adding kurtcebe.nl needed no new tunnel.
+# Its DNS side is the `zones["kurtcebe.nl"]` entry in terraform/terraform.tfvars.
+#
+# No TLS block: Cloudflare terminates HTTPS at its edge, so inside the cluster
+# everything is plain HTTP. Adding certs here would be a redundant second layer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kurtcebenl-web
+  labels:
+    app.kubernetes.io/name: kurtcebenl-web
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: kurtcebe.nl
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kurtcebenl-web
+                port:
+                  number: 80    # the Service port, not the container's 8080

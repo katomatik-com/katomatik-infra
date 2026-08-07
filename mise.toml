@@ -26,7 +26,7 @@ terraform = "1.15.8"
 
 # Cluster access. kubectl's skew policy tolerates +/-1 minor from the API server, so
 # check `kubectl version` against the k3s node before jumping a minor here.
-kubectl = "1.36.1"
+kubectl = "1.36.3"
 
 # Helm 4. ArgoCD renders charts with its OWN bundled Helm, so this pin is for what YOU
 # run by hand (template/diff/the one-time ArgoCD bootstrap from argocd/values.yaml).

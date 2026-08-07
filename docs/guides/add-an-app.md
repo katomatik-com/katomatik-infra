@@ -239,13 +239,34 @@ curl -I https://www.katomatik.com     # expect: 301 → https://katomatik.com
 
 ## Shipping a new build
 
-Tags are immutable, so a new build = a new tag. Bump the image tag in
-`manifests/<name>/deployment.yaml` and push; ArgoCD rolls it out. That single
-line is the whole record of what's live.
+Tags are immutable, so a new build = a new tag. That single line in
+`manifests/<name>/deployment.yaml` is the whole record of what's live, and
+**Renovate raises the bump as a PR** — merge it and ArgoCD rolls it out
+([ADR-0019](../adr/0019-renovate-self-hosted-dependency-updates.md)). Editing
+the tag by hand still works and is the fallback.
+
+For that to happen, the app's CI must publish an **orderable** tag:
+
+```yaml
+# in the app repo's docker/metadata-action step
+tags: |
+  type=raw,value={{date 'YYYYMMDD'}}.{{date 'HHmmss'}}-{{sha}}
+```
+
+A bare git SHA cannot be compared — Renovate can't tell `f23db80` from
+`be6ef2d`, so it proposes nothing and looks broken rather than erroring. The
+timestamp gives ordering, the trailing SHA keeps the commit readable, and
+seconds matter because two builds in one day would otherwise tie.
+
+A new app also needs its image added to the `matchPackageNames` list in
+[`renovate.json5`](../../renovate.json5), or Renovate will extract it but
+compare it with default versioning and never propose an upgrade.
 
 ## Checklist
 
 - [ ] Image pushed, tag pinned (not `:latest`), package public
+- [ ] App CI publishes an orderable `<date>.<time>-<sha>` tag, and the image is
+      listed in `renovate.json5` so bumps are automated
 - [ ] `manifests/<name>/` — Deployment, Service, Ingress (no `namespace:`)
 - [ ] `apps/<name>.yaml` — Application → that path, `destination.namespace` set
 - [ ] `terraform/terraform.tfvars` — hostname added under the right zone in

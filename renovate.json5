@@ -72,10 +72,17 @@
   ],
 
   // Vulnerability data from OSV.dev rather than GitHub's Dependabot alerts API.
-  // Dependabot alerts ARE enabled on this repo, but GITHUB_TOKEN cannot read
-  // that endpoint at all — it requires a PAT or GitHub App, which is the
-  // long-lived credential this setup avoids. Without this, Renovate reports
-  // "Cannot access vulnerability alerts" as a repository problem every run.
+  // Dependabot alerts ARE enabled on this repo (the API returns 204), but
+  // GITHUB_TOKEN cannot read that endpoint at all — it needs a PAT or GitHub
+  // App, i.e. the long-lived credential this setup exists to avoid.
+  //
+  // HONEST CAVEAT: this does NOT silence the "Cannot access vulnerability
+  // alerts" warning on the Dependency Dashboard — that was tried and it
+  // persists. The warning is accepted as cosmetic (ADR-0019): it names a
+  // capability that cannot work without changing the credential model. Whether
+  // OSV data is actually reaching Renovate is unproven either way, since no
+  // vulnerability has yet been found to demonstrate it. Left enabled because it
+  // costs nothing; do not read it as a fix for the warning.
   osvVulnerabilityAlerts: true,
 
   // Start conservative: every bump is a PR a human merges. Revisit automerge

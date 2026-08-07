@@ -45,3 +45,4 @@ Each ADR follows the same structure (keep it to 1–2 pages):
 | [0016](0016-authdemo-app-auth-design.md) | App auth design — client roles, a confidential client, RBAC in the app | Accepted |
 | [0017](0017-docs-in-git-backlog-in-jira.md) | Documentation stays in Git; open work is tracked in Jira | Accepted |
 | [0018](0018-second-domain-multi-zone-cloudflare.md) | Second domain in the katomatik account; Cloudflare layer becomes multi-zone | Accepted (revises 0007 account framing) |
+| [0019](0019-renovate-self-hosted-dependency-updates.md) | Automate dependency updates with self-hosted Renovate | Accepted |

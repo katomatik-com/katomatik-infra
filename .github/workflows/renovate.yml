@@ -36,6 +36,14 @@ jobs:
     permissions:
       contents: write # push renovate/* branches
       pull-requests: write # open and update the PRs
+      # The Dependency Dashboard is an ISSUE, not a PR. Without this the run
+      # still succeeds — POST /issues just 403s and the dashboard never appears,
+      # so anything deferred by prHourlyLimit becomes invisible rather than
+      # merely delayed.
+      issues: write
+      # Only for reading Dependabot alerts, so Renovate can prioritise a fix as
+      # a security update. Non-fatal if absent (it 403s and carries on).
+      security-events: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4

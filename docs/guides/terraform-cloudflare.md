@@ -183,6 +183,49 @@ curl -sSI https://argocd.katomatik.com | head -1   # HTTP/2 200
 > real DNS. Additions are safe; re-keying needs a `moved` block (see
 > `terraform/moved.tf`, written for the single-zone → multi-zone refactor).
 
+## Verifying a nameserver change
+
+Delegation is the one step Terraform can't do, and it's easy to verify *wrongly*
+— in both directions. Three traps, all of which bit us moving `kurtcebe.nl`:
+
+**1. Ask the parent, not the new provider.** A domain's NS records exist twice:
+the **parent** (`.nl`, TTL 3600) publishes the *delegation* — the authoritative
+answer to "who runs this zone" — and the **child** (Cloudflare, TTL 86400)
+publishes its own copy at the zone apex. Cloudflare serves its copy from the
+moment Terraform creates the zone, so asking the new nameservers whether they're
+in charge returns *yes* even while the registrar change is still pending. Only
+the parent tells you whether delegation actually moved:
+
+```sh
+dig @ns1.dns.nl kurtcebe.nl NS          # the parent's delegation — the real answer
+dig +trace kurtcebe.nl NS               # walks root → TLD → authoritative, ignoring caches
+```
+
+A TTL that isn't the parent's is the tell you're reading the child's copy.
+
+**2. A stale NS in cache can outlive the change — and break things.** Resolvers
+that cached the *old* child RRset keep asking the old nameservers for up to
+86400s. If those still answer authoritatively but the zone there is empty or
+deleted, users get an authoritative "no such record" — a **lame delegation**,
+which fails intermittently depending on which resolver someone uses. This is why
+the old zone is deleted **before** the registrar is repointed: it keeps the
+window where two accounts can both claim the domain closed (ADR-0018).
+
+**3. `dig` and your browser do not share a resolution path.** `dig` talks to the
+resolver directly; applications go through `getaddrinfo` and the OS cache. On
+macOS a negative entry cached before delegation landed will make `curl` report
+`Could not resolve host` while `dig` answers perfectly — which looks exactly like
+a broken apex record, and isn't. Check the OS cache separately, and flush it:
+
+```sh
+dscacheutil -q host -a name kurtcebe.nl                     # what the OS thinks
+sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+curl --resolve kurtcebe.nl:443:<cf-ip> https://kurtcebe.nl  # test the path, bypassing local DNS
+```
+
+The rule of thumb: **`dig` disagreeing with `curl` is a cache story, not a DNS
+fault.** Confirm with the parent and with `--resolve` before touching Terraform.
+
 ## Troubleshooting (what bit us)
 
 - **403 on `cfd_tunnel`** → token lacks **Cloudflare Tunnel: Write** *or* it isn't

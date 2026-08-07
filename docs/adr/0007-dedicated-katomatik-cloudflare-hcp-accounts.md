@@ -4,6 +4,16 @@
 
 Accepted — 2026-07-21. **Extends [ADR-0005](0005-terraform-for-cloudflare-external-layer.md).**
 
+> **Update (2026-08-07):** the *account framing* below — accounts "dedicated to
+> the katomatik project", with the `kurtcebe.nl` zone listed among the orphans
+> being wound down — is **revised by
+> [ADR-0018](0018-second-domain-multi-zone-cloudflare.md)**. That domain is now
+> served from *this* account, sharing its tunnel and workspace, and the
+> single-zone Terraform shape described here (`cloudflare_zone.primary`,
+> `cloudflare_zone_name`, a flat `hostnames` list) is generalised into a `zones`
+> map. The core decisions of *this* ADR — dedicated accounts as a clean-room cut,
+> and Terraform owning the zone — **stand unchanged.**
+
 ## Context
 
 The project rebranded from `kurtcebe.nl` to `katomatik.com` and moved to a new

@@ -27,6 +27,23 @@
     managerFilePatterns: ["/^manifests/.+\\.yaml$/"],
   },
 
+  // GitHub Actions versions can NEVER be updated by this setup. GITHUB_TOKEN is
+  // forbidden from pushing changes under .github/workflows/ — there is no
+  // `workflows` permission to grant it, only a PAT or GitHub App has that. The
+  // push is rejected with:
+  //
+  //   refusing to allow a GitHub App to create or update workflow
+  //   `.github/workflows/renovate.yml` without `workflows` permission
+  //
+  // and — the dangerous part — the run still reports SUCCESS. Left enabled it
+  // means a dashboard entry offering a checkbox that silently does nothing,
+  // forever. Disabled so the dashboard only ever lists work that can actually
+  // happen. Bump `uses:` lines by hand; it is rare.
+  //
+  // Note this only ever concerned THIS repo anyway: RENOVATE_REPOSITORIES is
+  // set to github.repository, so the app repos' workflows were never in scope.
+  "github-actions": { enabled: false },
+
   packageRules: [
     {
       description: [

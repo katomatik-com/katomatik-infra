@@ -47,11 +47,17 @@ orderable so it can work at all.**
 - **PRs, not automerge.** Every bump is a pull request a human merges. Revisit
   once the loop has proven itself.
 - **Scope beyond images.** One config also covers Terraform providers, the
-  ArgoCD Helm values, `mise` tools, and GitHub Actions. It *parses*
-  `ansible/requirements.yml` too, but every collection there is skipped with
-  `skipReason: unspecified-version` — they are listed without version
-  constraints, and Renovate cannot update what was never pinned. Pinning them
-  is part of KI-17, and would enable this as a side effect.
+  ArgoCD Helm values, and `mise` tools. Two things it does *not* cover, both
+  found by testing rather than assumption:
+  - `ansible/requirements.yml` is parsed, but every collection is skipped with
+    `skipReason: unspecified-version` — they are listed without version
+    constraints, and Renovate cannot update what was never pinned. Pinning them
+    is part of KI-17 and would enable this as a side effect.
+  - GitHub Actions are disabled outright (see Consequences).
+
+  Scope is also one repository: `RENOVATE_REPOSITORIES` is `github.repository`,
+  so the three app repos are never scanned. Their own dependencies stay manual;
+  only the image tags they publish are tracked, from here.
 
 ## Consequences
 
@@ -84,7 +90,15 @@ orderable so it can work at all.**
   decision exists to avoid.
 - **Latency.** Renovate polls; a build is not pushed to the infra repo. Up to an
   hour from image publish to PR, versus seconds for app-CI push.
-- **Three silent-failure modes**, all of which look like "Renovate isn't
+- **GitHub Actions cannot be updated, at all.** `GITHUB_TOKEN` is forbidden
+  from pushing changes under `.github/workflows/`; the push is rejected with
+  *"refusing to allow a GitHub App to create or update workflow … without
+  `workflows` permission"*, and there is no such permission to grant a
+  `GITHUB_TOKEN` — only a PAT or GitHub App has it. The `github-actions`
+  manager is therefore disabled, so the dashboard only lists work that can
+  actually happen. Workflow `uses:` lines are bumped by hand.
+
+- **Four silent-failure modes**, all of which look like "Renovate isn't
   running" rather than an error, and all now guarded in config or comments:
   1. The `kubernetes` manager has **no default file pattern** — unconfigured it
      matches nothing. Dry run: 0 files before `managerFilePatterns`, 9 after.
@@ -95,6 +109,16 @@ orderable so it can work at all.**
      succeeds, `POST /issues` 403s, and updates deferred by `prHourlyLimit`
      become invisible instead of merely delayed — which is exactly what happened
      on the first real run.
+  4. The workflow-file push rejection above is the worst of the four: Renovate
+     resolves the update, rewrites the file, prepares the commit, is rejected at
+     push — **and the run still reports success**. Only the debug log shows it,
+     while the dashboard keeps offering a checkbox that cannot work.
+
+- **Scheduled runs are best-effort.** GitHub cron is frequently late by 5–20
+  minutes and runs are dropped under load; the very first scheduled run here
+  never fired. "Within the hour" is a soft bound, not a guarantee. Ticking a
+  dashboard checkbox is likewise a *request* recorded in the issue body, acted
+  on at the next run — not a trigger.
 
 **Alternatives considered**
 

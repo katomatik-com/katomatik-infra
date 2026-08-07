@@ -26,8 +26,13 @@ zones = {
     hostnames = ["argocd", "www", "auth", "authdemo"]
   }
 
-  # kurtcebe.nl is added in KI-29, deliberately NOT here: this commit is a pure
-  # address move, so its plan must contain no creates at all (see moved.tf).
+  # The personal landing page (KI-26). Reuses the existing tunnel — a second
+  # domain needs no second tunnel and no cloudflared credential rotation.
+  # "www" is here only so Traefik can 301 it to the apex; the apex record
+  # itself is automatic (manifests/kurtcebenl-web).
+  "kurtcebe.nl" = {
+    hostnames = ["www"]
+  }
 }
 
 # Non-secret organization_id for our Neon database

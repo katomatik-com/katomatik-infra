@@ -5,7 +5,10 @@ to *understand* the DevOps / Kubernetes / GitOps tooling, not just get it
 running. Every significant decision is written down as an ADR so the reasoning
 survives, not just the resulting config.
 
-Public infrastructure for **katomatik.com** (ArgoCD runs at `argocd.katomatik.com`).
+Public infrastructure for **katomatik.com** and **kurtcebe.nl** — two domains on
+one node, sharing a single Cloudflare Tunnel and Traefik
+([ADR-0018](docs/adr/0018-second-domain-multi-zone-cloudflare.md)). ArgoCD runs
+at `argocd.katomatik.com`.
 
 ## Hardware
 
@@ -26,7 +29,7 @@ Public infrastructure for **katomatik.com** (ArgoCD runs at `argocd.katomatik.co
 | Secrets | SOPS + age | values encrypted in Git, decrypted at render time |
 | Ingress | Traefik | bundled with k3s |
 | Tunnel | Cloudflare Tunnel | `cloudflared` host daemon → Traefik — [ADR-0002](docs/adr/0002-cloudflare-tunnel-host-daemon-to-traefik.md) |
-| External / IaC | Terraform | Cloudflare zone/tunnel/DNS, state in HCP — [ADR-0005](docs/adr/0005-terraform-for-cloudflare-external-layer.md) / [0007](docs/adr/0007-dedicated-katomatik-cloudflare-hcp-accounts.md) |
+| External / IaC | Terraform | Cloudflare zones/tunnel/DNS (multi-zone `zones` map), state in HCP — [ADR-0005](docs/adr/0005-terraform-for-cloudflare-external-layer.md) / [0007](docs/adr/0007-dedicated-katomatik-cloudflare-hcp-accounts.md) / [0018](docs/adr/0018-second-domain-multi-zone-cloudflare.md) |
 | Identity | Keycloak | self-hosted IDP at `auth.katomatik.com`; Operator-managed instance, config in Terraform — [ADR-0009](docs/adr/0009-self-hosted-keycloak-idp.md) / [0014](docs/adr/0014-keycloak-operator.md) / [0015](docs/adr/0015-keycloak-config-via-terraform.md) |
 | Database | Neon (managed Postgres) | external, one project per app — [ADR-0011](docs/adr/0011-neon-managed-postgres.md) |
 
@@ -36,7 +39,12 @@ ArgoCD's UI is gated by Keycloak SSO (OIDC + PKCE); admin comes from the
 logs in against the same realm and enforces role-based access in-app — the worked
 example behind [ADR-0016](docs/adr/0016-authdemo-app-auth-design.md).
 
-*Planned:* Prometheus + Grafana (observability), and my own web apps.
+Two static sites are served: `katomatik-web` at the `katomatik.com` apex and
+`kurtcebenl-web` at the `kurtcebe.nl` apex, each with `www` 301'd to its apex.
+Both ride the same tunnel and Traefik — a second domain is a Host header and a
+zone key, not new infrastructure.
+
+*Planned:* Prometheus + Grafana (observability), and more of my own web apps.
 
 ## Repo layout
 

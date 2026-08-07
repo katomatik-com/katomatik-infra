@@ -92,8 +92,17 @@ Cloudflare account, so a second domain needs no second tunnel.
 ```sh
 cd terraform
 terraform init      # downloads providers, links the HCP workspace
-terraform plan      # expect: 4 to add (random_bytes + zone + tunnel + 1 dns_record)
+terraform plan
 ```
+
+With the minimal `zones` above, expect **5 Cloudflare objects**: `random_bytes`,
+the tunnel, the zone, its **apex** record, and one subdomain record (`argocd`).
+Every zone gets an apex record automatically, so the count grows by
+`1 + len(hostnames)` per domain.
+
+This workspace also holds `neon_project.keycloak` (ADR-0011), so a genuinely
+empty workspace plans **6 to add**, not 5 — the Neon project is unrelated to
+Cloudflare but shares the state.
 
 ---
 

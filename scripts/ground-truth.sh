@@ -26,11 +26,18 @@ set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT_DIR=""
+# Every public hostname the lab serves, across BOTH domains (ADR-0018). A
+# hostname missing here is not "assumed fine" — the audit has nothing to check
+# it against, so its claims come out UNVERIFIABLE. Add a line when you add a
+# hostname to terraform.tfvars `zones`.
 PUBLIC_HOSTS=(
   "https://argocd.katomatik.com"
   "https://auth.katomatik.com"
   "https://authdemo.katomatik.com"
   "https://katomatik.com"
+  "https://www.katomatik.com"
+  "https://kurtcebe.nl"
+  "https://www.kurtcebe.nl"
 )
 
 while getopts ":o:h" opt; do
@@ -113,6 +120,12 @@ note "==> public endpoints"
     printf '%-40s %s\n' "$base/" "$(curl -s -o /dev/null -m 15 -w '%{http_code}' "$base/" || echo ERR)"
   done
   # Specific claims the guides make, worth checking by name rather than by host.
+  # The www hosts above only record a status code; the docs claim a redirect to a
+  # SPECIFIC target, so capture the Location too or "301" would look like proof.
+  printf '%-40s %s\n' "katomatik: www -> apex target" \
+    "$(curl -s -o /dev/null -m 15 -w '%{redirect_url}' https://www.katomatik.com/ || echo ERR)"
+  printf '%-40s %s\n' "kurtcebe: www -> apex target" \
+    "$(curl -s -o /dev/null -m 15 -w '%{redirect_url}' https://www.kurtcebe.nl/ || echo ERR)"
   printf '%-40s %s\n' "auth: /admin must NOT be routed" \
     "$(curl -s -o /dev/null -m 15 -w '%{http_code}' https://auth.katomatik.com/admin || echo ERR)"
   printf '%-40s %s\n' "auth: OIDC discovery" \

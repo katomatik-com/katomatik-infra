@@ -6,6 +6,11 @@ static site at the apex **katomatik.com** (`manifests/katomatik-web/`), but the
 shape is the same for any app. The *why* behind these choices is
 [ADR-0008](../adr/0008-app-delivery-plain-manifests-and-apex-routing.md).
 
+`manifests/kurtcebenl-web/` is the same pattern on a **second domain**
+(`kurtcebe.nl`) — useful to diff against, and a fair warning that only the
+Ingress host rules and the Terraform zone key actually differ
+([ADR-0018](../adr/0018-second-domain-multi-zone-cloudflare.md)).
+
 ## The mental model
 
 Two independent things have to line up for a request to reach your app:
@@ -138,19 +143,37 @@ file at [`apps/katomatik-web.yaml`](../../apps/katomatik-web.yaml).
 The hostname has to resolve to the tunnel. That's a proxied CNAME to
 `<tunnel-id>.cfargotunnel.com`, managed in `terraform/`:
 
-- **A subdomain** — add its label to the `hostnames` list in
-  `terraform/terraform.tfvars`. The `cloudflare_dns_record.app` `for_each`
-  creates one record per label:
+The lab serves more than one domain, so records live in a `zones` map keyed by
+apex (ADR-0018) — first decide which domain the hostname belongs to.
+
+- **A subdomain** — add its label to that zone's `hostnames` list in
+  `terraform/terraform.tfvars`. The `cloudflare_dns_record.subdomain` `for_each`
+  creates one record per (zone, label) pair:
 
   ```hcl
-  hostnames = ["argocd", "www", "auth", "authdemo"]
+  zones = {
+    "katomatik.com" = { hostnames = ["argocd", "www", "auth", "authdemo"] }
+    "kurtcebe.nl"   = { hostnames = ["www"] }
+  }
   ```
 
 - **The apex** — DNS forbids a real CNAME at a zone apex, so it can't ride the
-  subdomain `for_each`. It has its own resource
-  (`cloudflare_dns_record.apex` in `terraform/cloudflare.tf`) using Cloudflare's
-  **CNAME flattening**, which is set up once and needs no change for future
-  apps.
+  subdomain `for_each`. `cloudflare_dns_record.apex` in
+  `terraform/cloudflare.tf` handles it with Cloudflare's **CNAME flattening**,
+  one record per zone, created automatically. Never list an apex under
+  `hostnames`.
+
+- **A whole new domain** — add a top-level key. The zone, its apex record and
+  its subdomains all follow, and the **existing tunnel is reused** (a
+  `cfargotunnel.com` CNAME resolves for any zone in the same Cloudflare
+  account). The only extra step is delegating that domain's nameservers at its
+  registrar — see [Terraform — Cloudflare](terraform-cloudflare.md), which also
+  covers how to verify a delegation without fooling yourself.
+
+> **Adding a key is free; renaming or removing one is not.** The apex key and
+> the subdomain labels build the Terraform resource addresses, so changing an
+> existing one plans a destroy + create of live DNS. A rename needs a `moved`
+> block (`terraform/moved.tf` has worked examples).
 
 Apply from the `terraform/` dir (runs in HCP):
 
@@ -225,7 +248,9 @@ line is the whole record of what's live.
 - [ ] Image pushed, tag pinned (not `:latest`), package public
 - [ ] `manifests/<name>/` — Deployment, Service, Ingress (no `namespace:`)
 - [ ] `apps/<name>.yaml` — Application → that path, `destination.namespace` set
-- [ ] `terraform/terraform.tfvars` — hostname added (apex already handled)
+- [ ] `terraform/terraform.tfvars` — hostname added under the right zone in
+      `zones` (each zone's apex record is automatic; a *new* domain also needs
+      registrar delegation)
 - [ ] (optional) `www` redirect middleware
 - [ ] `terraform apply`, then commit + push
 - [ ] Verified: `kubectl get`, `dig`, `curl -I`

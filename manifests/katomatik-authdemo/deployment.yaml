@@ -4,8 +4,11 @@
 # No `namespace:` — the ArgoCD Application (apps/katomatik-authdemo.yaml) sets
 # destination.namespace, so these manifests stay namespace-portable.
 #
-# The image tag is a git commit hash, never :latest — GitOps wants "what is
-# deployed" to map to a line in Git. Shipping a new build = bump this tag.
+# The image tag is `<UTC build time>-<short sha>`, never :latest — GitOps wants
+# "what is deployed" to map to a line in Git, and the trailing sha keeps the
+# commit readable. The timestamp is what makes the tag ORDERABLE, so Renovate
+# can tell one build from the next; a bare sha cannot be compared (KI-22).
+# Shipping a new build = bump this tag.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -41,7 +44,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: app
-          image: ghcr.io/katomatik-com/katomatik-authdemo:953251b
+          image: ghcr.io/katomatik-com/katomatik-authdemo:20260807.202027-854c316
           ports:
             - name: http
               containerPort: 8081     # matches server.port in application.yaml

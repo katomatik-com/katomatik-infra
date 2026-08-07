@@ -5,9 +5,13 @@
 # name lives in exactly one place.
 #
 # The image is built from github.com/kurtcebe/kurtcebenl-web: an Astro site
-# compiled to static HTML and baked into an nginx image. Its CI emits `type=sha`
-# tags, so `sha-27ecc93` is an immutable reference to one commit — never
-# `:latest`, because GitOps wants "what's deployed" to map to a line in Git.
+# compiled to static HTML and baked into an nginx image. The tag is
+# `<UTC build time>-<short sha>` — immutable, and never `:latest`, because
+# GitOps wants "what's deployed" to map to a line in Git.
+#
+# The timestamp is not decoration: a bare sha has no ORDER, so Renovate could
+# never tell one build from the next and would propose nothing. Seconds are
+# included because two builds in one day would otherwise tie (KI-22).
 # Shipping a new build = bump this tag and push (docs/guides/add-an-app.md).
 #
 # The image is public on GHCR (no imagePullSecret needed) and ships a linux/arm64
@@ -31,7 +35,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/kurtcebe/kurtcebenl-web:sha-27ecc93
+          image: ghcr.io/kurtcebe/kurtcebenl-web:20260807.175745-7abed36
           ports:
             - name: http    # named port — the Service targets this name, not 8080
               containerPort: 8080   # nginx listens on 8080 so it needn't run as root

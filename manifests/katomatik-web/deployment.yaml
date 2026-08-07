@@ -4,10 +4,14 @@
 # sets destination.namespace, so these manifests stay namespace-portable and the
 # name lives in exactly one place.
 #
-# The image tag is a git commit hash (f23db80), NOT a floating tag like :latest.
-# GitOps wants an immutable, committed reference so "what's deployed" always maps
-# to a line in Git. Shipping a new build = bump this tag and push (see the how-to
-# in docs/guides/add-an-app.md).
+# The image tag is `<UTC build time>-<short sha>`, NOT a floating tag like
+# :latest. GitOps wants an immutable, committed reference so "what's deployed"
+# always maps to a line in Git; the trailing sha keeps the commit readable here.
+#
+# The timestamp is not decoration: a bare sha has no ORDER, so Renovate could
+# never tell one build from the next and would propose nothing. Seconds are
+# included because two builds in one day would otherwise tie (KI-22).
+# Shipping a new build = bump this tag and push (docs/guides/add-an-app.md).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -26,7 +30,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/katomatik-com/katomatik-web:f23db80
+          image: ghcr.io/katomatik-com/katomatik-web:20260807.201618-5e4fa04
           ports:
             - name: http    # named port — the Service targets this name, not 8080
               containerPort: 8080

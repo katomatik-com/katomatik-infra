@@ -47,8 +47,11 @@ orderable so it can work at all.**
 - **PRs, not automerge.** Every bump is a pull request a human merges. Revisit
   once the loop has proven itself.
 - **Scope beyond images.** One config also covers Terraform providers, the
-  ArgoCD Helm values, `mise` tools, GitHub Actions, and Ansible collections —
-  the last overlapping KI-17.
+  ArgoCD Helm values, `mise` tools, and GitHub Actions. It *parses*
+  `ansible/requirements.yml` too, but every collection there is skipped with
+  `skipReason: unspecified-version` — they are listed without version
+  constraints, and Renovate cannot update what was never pinned. Pinning them
+  is part of KI-17, and would enable this as a side effect.
 
 ## Consequences
 

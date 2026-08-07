@@ -71,6 +71,13 @@
     },
   ],
 
+  // Vulnerability data from OSV.dev rather than GitHub's Dependabot alerts API.
+  // Dependabot alerts ARE enabled on this repo, but GITHUB_TOKEN cannot read
+  // that endpoint at all — it requires a PAT or GitHub App, which is the
+  // long-lived credential this setup avoids. Without this, Renovate reports
+  // "Cannot access vulnerability alerts" as a repository problem every run.
+  osvVulnerabilityAlerts: true,
+
   // Start conservative: every bump is a PR a human merges. Revisit automerge
   // for our own images once the loop has proven itself.
   automerge: false,

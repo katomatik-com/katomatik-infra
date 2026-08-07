@@ -41,9 +41,11 @@ jobs:
       # so anything deferred by prHourlyLimit becomes invisible rather than
       # merely delayed.
       issues: write
-      # Only for reading Dependabot alerts, so Renovate can prioritise a fix as
-      # a security update. Non-fatal if absent (it 403s and carries on).
-      security-events: read
+      # No security-events here on purpose: GITHUB_TOKEN cannot read the
+      # Dependabot alerts API whatever permissions it is granted — that endpoint
+      # needs a PAT or GitHub App, i.e. the long-lived credential this whole
+      # setup exists to avoid. Renovate gets vulnerability data from OSV instead
+      # (osvVulnerabilityAlerts in renovate.json5).
     steps:
       - name: Checkout
         uses: actions/checkout@v4

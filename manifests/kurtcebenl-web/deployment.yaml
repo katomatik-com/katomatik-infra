@@ -35,7 +35,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/kurtcebe/kurtcebenl-web:20260807.175745-7abed36
+          image: ghcr.io/kurtcebe/kurtcebenl-web:20260807.221105-53807be
           ports:
             - name: http    # named port — the Service targets this name, not 8080
               containerPort: 8080   # nginx listens on 8080 so it needn't run as root

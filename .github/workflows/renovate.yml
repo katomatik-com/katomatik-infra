@@ -1,0 +1,51 @@
+# Self-hosted Renovate (KI-22).
+#
+# The point of running it HERE rather than as the hosted GitHub App: Renovate
+# needs write access to open PRs, and this way the credential is the repo's own
+# ephemeral GITHUB_TOKEN. Nothing external — not an app pipeline, not a SaaS
+# bot, not the cluster — ever holds write access to the manifests that define
+# the cluster. That was the trust question behind KI-22.
+#
+# Config lives in ../../renovate.json5 (auto-discovered, not passed in).
+name: Renovate
+
+on:
+  schedule:
+    # Hourly, off the hour: the top of the hour is the busiest slot on shared
+    # runners, and nothing here is urgent.
+    - cron: "17 * * * *"
+  # Manual runs, for validating a config change without waiting for the cron.
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: "Renovate log level"
+        type: choice
+        options: [info, debug]
+        default: info
+
+# Never let two runs overlap — a second Renovate against the same repo can
+# fight the first over branch state. Queue instead of cancelling, so a run
+# already opening PRs is allowed to finish.
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push renovate/* branches
+      pull-requests: write # open and update the PRs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Renovate
+        uses: renovatebot/github-action@v46.2.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          # Self-hosted Renovate does not autodiscover by default; without this
+          # it runs against nothing and exits successfully — a silent no-op.
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          LOG_LEVEL: ${{ inputs.logLevel || 'info' }}

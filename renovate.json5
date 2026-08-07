@@ -1,0 +1,81 @@
+// Renovate — dependency freshness for the whole lab (KI-22).
+//
+// JSON5 rather than JSON so this can carry comments, like everything else here.
+// Renovate reads renovate.json5 natively.
+//
+// WHY THIS EXISTS: shipping a new build used to mean hand-editing an image tag
+// in this repo. The alternatives were push-based (each app's CI writes here,
+// which hands three pipelines write access to the manifests that define the
+// cluster) or ArgoCD Image Updater (which only supports Kustomize/Helm sources,
+// not the plain manifests of ADR-0008). Renovate running INSIDE this repo needs
+// no external credential at all — see .github/workflows/renovate.yml.
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  extends: [
+    "config:recommended",
+    ":dependencyDashboard", // one issue listing everything pending
+  ],
+
+  timezone: "Europe/Amsterdam",
+
+  // The Kubernetes manager has NO default file pattern — unconfigured, it
+  // silently matches nothing and Renovate looks like it simply isn't working.
+  // Scoped to manifests/ so it never tries to parse ArgoCD Applications or
+  // Helm values as workload YAML.
+  kubernetes: {
+    managerFilePatterns: ["/^manifests/.+\\.yaml$/"],
+  },
+
+  packageRules: [
+    {
+      description: [
+        "Our own app images. Their tags are <UTC build time>-<short sha>, e.g.",
+        "20260807.201618-5e4fa04. A bare git sha has no ORDER, so without this",
+        "versioning rule Renovate cannot tell one build from the next and would",
+        "propose nothing at all — a silent no-op, not an error.",
+        "",
+        "The regex is deliberately NOT anchored at the end: the trailing -<sha>",
+        "is matched but never captured. Capturing it in `compatibility` (the",
+        "obvious-looking slot) would be worse than useless — that group exists to",
+        "BLOCK updates across differing values, so every build would look",
+        "incompatible with the last and nothing would ever be proposed.",
+        "",
+        "All capture groups must be purely numeric, hence the split into",
+        "year/month/day/time rather than one date field.",
+      ],
+      matchDatasources: ["docker"],
+      matchPackageNames: [
+        "ghcr.io/katomatik-com/katomatik-web",
+        "ghcr.io/katomatik-com/katomatik-authdemo",
+        "ghcr.io/kurtcebe/kurtcebenl-web",
+      ],
+      versioning: "regex:^(?<major>\\d{4})(?<minor>\\d{2})(?<patch>\\d{2})\\.(?<build>\\d{6})",
+      // Because major=year and minor=month, an ordinary next-day build reads as
+      // a "patch" update and the first build of a new month as "minor". That is
+      // cosmetic labelling only; ordering is still strictly chronological.
+      commitMessageTopic: "{{depName}} image",
+      semanticCommits: "disabled",
+    },
+    {
+      description: [
+        "Old-style tags (f23db80, sha-27ecc93, sha-<40 hex>) fail the versioning",
+        "regex and are skipped automatically, so they can keep being published",
+        "without confusing comparison. Verified rather than assumed.",
+        "",
+        "Terraform providers, the ArgoCD Helm chart and GitHub Actions are picked",
+        "up by their own managers with default versioning — no rule needed.",
+      ],
+      matchPackageNames: ["*"],
+      enabled: true,
+    },
+  ],
+
+  // Start conservative: every bump is a PR a human merges. Revisit automerge
+  // for our own images once the loop has proven itself.
+  automerge: false,
+
+  // A static-site rebuild is not urgent; keep the noise down.
+  prHourlyLimit: 4,
+  prConcurrentLimit: 10,
+}
